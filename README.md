@@ -7,7 +7,7 @@
 
 BasicSync is a simple app for running Syncthing on Android.
 
-There are intentionally very few features, so that the project is easy to maintain and keep updated. All configuration is done through Syncthing's own web UI. BasicSync only controls when Syncthing runs.
+The app is intentionally kept very basic so that the project is easy to maintain and keep updated. BasicSync only controls when Syncthing runs. The actual configuration is done through Syncthing's own web UI.
 
 <img src="app/images/light.png" alt="light mode screenshot" width="200" /> <img src="app/images/dark.png" alt="dark mode screenshot" width="200" />
 
@@ -17,7 +17,8 @@ There are intentionally very few features, so that the project is easy to mainta
 * Supports importing and exporting the configuration
 * Supports pausing syncing based on network and battery conditions
 * Runs Syncthing as a library in the main process
-    * This makes BasicSync immune to Android 12+'s child process restrictions
+    * This makes BasicSync immune to Android >=12's child process restrictions
+* Small additions to Syncthing's web UI to add a folder picker and QR code scanner
 
 ## Limitations
 
@@ -39,7 +40,7 @@ There are intentionally very few features, so that the project is easy to mainta
 
 ## Permissions
 
-* `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_SPECIAL_USE` (Android 14+)
+* `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_SPECIAL_USE` (Android >=14)
     * Needed to run Syncthing in the background indefinitely.
 * `POST_NOTIFICATIONS`
     * Needed to run Syncthing in the background and also to manually start and stop Syncthing if desired.

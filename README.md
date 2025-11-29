@@ -59,6 +59,12 @@ There are intentionally very few features, so that the project is easy to mainta
 * `CAMERA`
     * Optionally used for scanning a device's QR code when adding a new device.
 
+## Remote access
+
+Syncthing listens on the loopback interface and is available via `localhost` (both IPv4 `127.0.0.1` and IPv6 `::1`). BasicSync will try to use the same port on every start (with a default of 8384), but will automatically pick a new random port if there is a conflict. The current port number can be found in Web UI -> Actions -> Settings -> GUI. HTTPS and basic authentication are both forcibly enabled every time Syncthing starts.
+
+For basic authentication, the password is the API token. Generating new API tokens is supported, but setting an arbitrary password is not. BasicSync will internally set the password to the API token on every start.
+
 ## Verifying digital signatures
 
 First, use `apksigner` to print the digests of the APK signing certificate:

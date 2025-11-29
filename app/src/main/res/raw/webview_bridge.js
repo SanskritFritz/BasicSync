@@ -66,9 +66,25 @@ function addQrScanner(element) {
     }, false);
 }
 
+function hideActionMenuItem(iconElement) {
+    var listItem = iconElement;
+
+    while (listItem && !(listItem instanceof HTMLLIElement)) {
+        listItem = listItem.parentElement;
+    }
+
+    if (!listItem) {
+        throw new Error(`Parent <li> for action not found: ${iconElement.classList}`);
+    }
+
+    listItem.style.display = 'none';
+}
+
 var elemFolderPath = undefined;
 var elemShareDeviceIdButtons = undefined;
 var elemDeviceId = undefined;
+var elemLogOutIcon = undefined;
+var elemShutDownIcon = undefined;
 
 function tryAddExtraButtons() {
     if (!elemFolderPath) {
@@ -89,7 +105,29 @@ function tryAddExtraButtons() {
         elemDeviceId = document.getElementById('deviceID');
     }
 
-    return !!elemFolderPath && !!elemShareDeviceIdButtons && !!elemDeviceId;
+    // Hide the log out button so the user doesn't get into a state where they have to restart the
+    // webview to log in again.
+    if (!elemLogOutIcon) {
+        elemLogOutIcon = document.getElementsByClassName('fa-sign-out')[0];
+        if (elemLogOutIcon) {
+            hideActionMenuItem(elemLogOutIcon);
+        }
+    }
+
+    // Hide the shut down button because it behaves exactly the same as restart due to
+    // SyncthingService's run loop mechanism.
+    if (!elemShutDownIcon) {
+        elemShutDownIcon = document.getElementsByClassName('fa-power-off')[0];
+        if (elemShutDownIcon) {
+            hideActionMenuItem(elemShutDownIcon);
+        }
+    }
+
+    return !!elemFolderPath
+        && !!elemShareDeviceIdButtons
+        && !!elemDeviceId
+        && !!elemLogOutIcon
+        && !!elemShutDownIcon;
 }
 
 if (!tryAddExtraButtons()) {

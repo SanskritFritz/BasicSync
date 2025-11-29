@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.text.Collator
 
 class FolderPickerViewModel : ViewModel() {
     companion object {
@@ -23,6 +24,11 @@ class FolderPickerViewModel : ViewModel() {
         @SuppressLint("SdCardPath")
         private val SDCARD = File("/sdcard")
         val EXTERNAL_DIR: File = Environment.getExternalStorageDirectory()
+
+        // Same sorting method as AOSP's DocumentsUI.
+        private val COLLATOR = Collator.getInstance().apply {
+            strength = Collator.SECONDARY
+        }
 
         private fun expandPath(path: File): File =
             if (path.startsWith(HOME)) {
@@ -72,7 +78,7 @@ class FolderPickerViewModel : ViewModel() {
                 }
 
                 val children = newCwd.listFiles() ?: return@withContext
-                children.sort()
+                children.sortWith(Comparator { a, b -> COLLATOR.compare(a.name, b.name) })
 
                 val childDirs = ArrayList<String>().apply {
                     if (relPath.isNotEmpty()) {

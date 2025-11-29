@@ -80,13 +80,47 @@ function hideActionMenuItem(iconElement) {
     listItem.style.display = 'none';
 }
 
+function hideParent(child, predicate) {
+    var parent = child.parentElement;
+
+    while (parent && !predicate(parent)) {
+        parent = parent.parentElement;
+    }
+
+    if (!parent) {
+        throw new Error(`Matching parent not found for: ${child.id} ${child.classList}`);
+    }
+
+    parent.style.display = 'none';
+}
+
 var elemFolderPath = undefined;
 var elemShareDeviceIdButtons = undefined;
 var elemDeviceId = undefined;
-var elemLogOutIcon = undefined;
-var elemShutDownIcon = undefined;
 
-function tryAddExtraButtons() {
+const actionsToHide = new Set([
+    // Hide the log out button so the user doesn't get into a state where they have to restart the
+    // webview to log in again.
+    'fa-sign-out',
+    // Hide the shut down button because it behaves exactly the same as restart due to
+    // SyncthingService's run loop mechanism.
+    'fa-power-off',
+]);
+
+// There are many other ways the user can shoot themselves in the foot, like by syncing xattrs, but
+// we'll only discourage messing with settings that break the configuration web UI.
+const settingsToDisable = new Set([
+    // The webview requires the password to be the API key because there's no sane way to inject
+    // custom headers, so we need basic auth. Hide the password field to reduce the chance of users
+    // breaking their setup (until the next restart when the password is forcibly changed back).
+    'password',
+    // Android blocks HTTP by default and we don't override this restriction.
+    'UseTLS',
+    // Cannot work on Android.
+    'StartBrowser',
+]);
+
+function tryMutate() {
     if (!elemFolderPath) {
         elemFolderPath = document.getElementById('folderPath');
         if (elemFolderPath) {
@@ -105,49 +139,29 @@ function tryAddExtraButtons() {
         elemDeviceId = document.getElementById('deviceID');
     }
 
-    // Hide the log out button so the user doesn't get into a state where they have to restart the
-    // webview to log in again.
-    if (!elemLogOutIcon) {
-        elemLogOutIcon = document.getElementsByClassName('fa-sign-out')[0];
-        if (elemLogOutIcon) {
-            hideActionMenuItem(elemLogOutIcon);
+    for (const className of actionsToHide) {
+        const icon = document.getElementsByClassName(className)[0];
+        if (icon) {
+            hideParent(icon, function(parent) {
+                return parent instanceof HTMLLIElement;
+            });
+            actionsToHide.delete(className);
         }
     }
 
-    // Hide the shut down button because it behaves exactly the same as restart due to
-    // SyncthingService's run loop mechanism.
-    if (!elemShutDownIcon) {
-        elemShutDownIcon = document.getElementsByClassName('fa-power-off')[0];
-        if (elemShutDownIcon) {
-            hideActionMenuItem(elemShutDownIcon);
+    for (const id of settingsToDisable) {
+        const field = document.getElementById(id);
+        if (field) {
+            field.disabled = true;
+            settingsToDisable.delete(id);
         }
     }
 
     return !!elemFolderPath
         && !!elemShareDeviceIdButtons
         && !!elemDeviceId
-        && !!elemLogOutIcon
-        && !!elemShutDownIcon;
-}
-
-if (!tryAddExtraButtons()) {
-    const callback = (mutationList, observer) => {
-        for (const mutation of mutationList) {
-            // The actual elements we need are added via innerHTML by Angular, which doesn't get
-            // reported as distinct mutations. It's faster to just find by element ID than to
-            // recursively walk mutation.addedNodes.
-
-            if (tryAddExtraButtons()) {
-                observer.disconnect();
-            }
-        }
-    };
-
-    const observer = new MutationObserver(callback);
-    observer.observe(document.body, {
-        childList: true,
-        subtree: true,
-    });
+        && actionsToHide.size == 0
+        && settingsToDisable.size == 0;
 }
 
 function onFolderSelected(path) {
@@ -156,4 +170,23 @@ function onFolderSelected(path) {
 
 function onDeviceIdScanned(deviceId) {
     elemDeviceId.value = deviceId;
+}
+
+if (!tryMutate()) {
+    const callback = (mutationList, observer) => {
+        // The actual elements we need are added via innerHTML by Angular, which doesn't get
+        // reported as distinct mutations. It's faster to just find by element ID than to
+        // recursively walk mutation.addedNodes.
+
+        if (tryMutate()) {
+            console.log('All mutations complete; unregistering observer');
+            observer.disconnect();
+        }
+    };
+
+    const observer = new MutationObserver(callback);
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true,
+    });
 }

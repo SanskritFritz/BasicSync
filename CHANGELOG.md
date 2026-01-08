@@ -7,7 +7,7 @@
     to update the actual links at the bottom of the file.
 -->
 
-### Unreleased
+### Version 1.2
 
 * Consider plugged in device as charging (eg. when device reached charge limit) ([PR #3])
 * Update syncthing to 2.0.13 ([PR #4])

@@ -77,15 +77,22 @@ class SyncthingService : Service(), SyncthingStatusReceiver,
     enum class RunState {
         RUNNING,
         NOT_RUNNING,
+        PAUSED,
         STARTING,
         STOPPING,
+        PAUSING,
         IMPORTING,
-        EXPORTING,
+        EXPORTING;
+
+        val webUiAvailable: Boolean
+            get() = this == RUNNING || this == PAUSED || this == PAUSING
     }
 
     data class ServiceState(
+        val keepAlive: Boolean,
         val shouldRun: Boolean,
-        val isRunning: Boolean,
+        val isStarted: Boolean,
+        val isActive: Boolean,
         val manualMode: Boolean,
         val preRunAction: PreRunAction?,
     ) {
@@ -95,17 +102,33 @@ class SyncthingService : Service(), SyncthingStatusReceiver,
                     is PreRunAction.Import -> RunState.IMPORTING
                     is PreRunAction.Export -> RunState.EXPORTING
                 }
-            } else if (isRunning) {
-                if (shouldRun) {
-                    RunState.RUNNING
+            } else if (isStarted) {
+                if (isActive) {
+                    if (shouldRun) {
+                        RunState.RUNNING
+                    } else if (keepAlive) {
+                        RunState.PAUSING
+                    } else {
+                        RunState.STOPPING
+                    }
                 } else {
-                    RunState.STOPPING
+                    if (shouldRun) {
+                        RunState.STARTING
+                    } else if (keepAlive) {
+                        RunState.PAUSED
+                    } else {
+                        RunState.STOPPING
+                    }
                 }
             } else {
-                if (shouldRun) {
-                    RunState.STARTING
+                if (isActive) {
+                    throw IllegalArgumentException("Service active, but not running?")
                 } else {
-                    RunState.NOT_RUNNING
+                    if (shouldRun) {
+                        RunState.STARTING
+                    } else {
+                        RunState.NOT_RUNNING
+                    }
                 }
             }
 
@@ -191,6 +214,10 @@ class SyncthingService : Service(), SyncthingStatusReceiver,
             autoShouldRun
         }
 
+    private val shouldStart: Boolean
+        @GuardedBy("stateLock")
+        get() = prefs.keepAlive || shouldRun
+
     @GuardedBy("stateLock")
     private val preRunActions = mutableListOf<PreRunAction>()
 
@@ -200,9 +227,17 @@ class SyncthingService : Service(), SyncthingStatusReceiver,
     @GuardedBy("stateLock")
     private var syncthingApp: SyncthingApp? = null
 
-    private val isRunning: Boolean
+    private val isStarted: Boolean
         @GuardedBy("stateLock")
         get() = syncthingApp != null
+
+    private val isActive: Boolean
+        @GuardedBy("stateLock")
+        get() = if (prefs.keepAlive) {
+            syncthingApp?.isConnectAllowed ?: false
+        } else {
+            isStarted
+        }
 
     private val guiInfo: GuiInfo?
         @GuardedBy("stateLock")
@@ -362,7 +397,8 @@ class SyncthingService : Service(), SyncthingStatusReceiver,
             Preferences.PREF_MANUAL_MODE,
             Preferences.PREF_MANUAL_SHOULD_RUN,
             Preferences.PREF_REQUIRE_UNMETERED_NETWORK,
-            Preferences.PREF_REQUIRE_SUFFICIENT_BATTERY -> stateChanged()
+            Preferences.PREF_REQUIRE_SUFFICIENT_BATTERY,
+            Preferences.PREF_KEEP_ALIVE -> stateChanged()
             Preferences.PREF_DEBUG_MODE -> setLogLevel()
         }
     }
@@ -376,9 +412,13 @@ class SyncthingService : Service(), SyncthingStatusReceiver,
 
     private fun stateChanged() {
         synchronized(stateLock) {
+            handleStateChangeLocked()
+
             val notificationState = ServiceState(
+                keepAlive = prefs.keepAlive,
                 shouldRun = shouldRun,
-                isRunning = isRunning,
+                isStarted = isStarted,
+                isActive = isActive,
                 manualMode = prefs.isManualMode,
                 preRunAction = currentPreRunAction,
             )
@@ -408,19 +448,20 @@ class SyncthingService : Service(), SyncthingStatusReceiver,
 
                 lastServiceState = notificationState
             }
-
-            triggerRunnerLoopLocked()
         }
     }
 
     @GuardedBy("stateLock")
-    private fun triggerRunnerLoopLocked() {
+    private fun handleStateChangeLocked() {
         val app = syncthingApp
 
-        if (runningProxyInfo != deviceProxyInfo
-                || preRunActions.isNotEmpty()
-                || isRunning != shouldRun) {
-            if (app != null) {
+        val needFullRestart = runningProxyInfo != deviceProxyInfo || preRunActions.isNotEmpty()
+
+        if (needFullRestart || isStarted != shouldStart || isActive != shouldRun) {
+            if (!needFullRestart && app != null && prefs.keepAlive) {
+                Log.d(TAG, "Keep alive enabled; changing connect allowed to $shouldRun")
+                app.isConnectAllowed = shouldRun
+            } else if (app != null) {
                 Log.d(TAG, "Syncthing is running; stopping service")
                 app.stopAsync()
             } else {
@@ -436,7 +477,8 @@ class SyncthingService : Service(), SyncthingStatusReceiver,
             var proxyInfo: ProxyInfo
 
             synchronized(stateLock) {
-                while (preRunActions.isEmpty() && !shouldRun) {
+                while (preRunActions.isEmpty() && !shouldStart) {
+                    Log.d(TAG, "Nothing to do; sleeping")
                     stateLock.wait()
                 }
 
@@ -492,6 +534,8 @@ class SyncthingService : Service(), SyncthingStatusReceiver,
                 notifications.sendFailureNotification(e)
 
                 // For now, just switch to manual mode so that we're not stuck in a restart loop.
+                // Since Syncthing is not running, this won't result in handleStateChangeLocked()
+                // just toggling isConnectAllowed.
                 prefs.manualShouldRun = false
                 prefs.isManualMode = true
 
@@ -585,7 +629,7 @@ class SyncthingService : Service(), SyncthingStatusReceiver,
                 Log.d(TAG, "Scheduling configuration import: $uri")
 
                 preRunActions.add(PreRunAction.Import(uri))
-                triggerRunnerLoopLocked()
+                handleStateChangeLocked()
             }
         }
 
@@ -594,7 +638,7 @@ class SyncthingService : Service(), SyncthingStatusReceiver,
                 Log.d(TAG, "Scheduling configuration export: $uri")
 
                 preRunActions.add(PreRunAction.Export(uri))
-                triggerRunnerLoopLocked()
+                handleStateChangeLocked()
             }
         }
     }

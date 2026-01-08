@@ -178,6 +178,21 @@ func (app *SyncthingApp) StopAsync() {
 	go app.app.Stop(svcutil.ExitSuccess)
 }
 
+func (app *SyncthingApp) IsConnectAllowed() bool {
+	return app.cfg.Options().ConnectAllowed
+}
+
+func (app *SyncthingApp) SetConnectAllowed(allowed bool) error {
+	_, err := app.cfg.Modify(func(cfg *config.Configuration) {
+		cfg.Options.ConnectAllowed = allowed
+	})
+	if err != nil {
+		return fmt.Errorf("failed to set connect allowed state: %v: %w", allowed, err)
+	}
+
+	return nil
+}
+
 func (app *SyncthingApp) GuiAddress() string {
 	return app.cfg.GUI().URL()
 }

@@ -95,6 +95,13 @@
             app:title="@string/pref_require_sufficient_battery_name"
             app:summary="@string/pref_require_sufficient_battery_desc"
             app:iconSpaceReserved="false" />
+
+        <SwitchPreferenceCompat
+            app:key="keep_alive"
+            app:defaultValue="true"
+            app:title="@string/pref_keep_alive_name"
+            app:summary="@string/pref_keep_alive_desc"
+            app:iconSpaceReserved="false" />
     </PreferenceCategory>
 
     <PreferenceCategory

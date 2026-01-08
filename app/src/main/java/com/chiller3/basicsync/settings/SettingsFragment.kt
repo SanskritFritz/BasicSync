@@ -183,7 +183,7 @@ class SettingsFragment : PreferenceBaseFragment(), Preference.OnPreferenceClickL
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.CREATED) {
                 viewModel.runState.collect {
-                    prefOpenWebUi.isEnabled = it == SyncthingService.RunState.RUNNING
+                    prefOpenWebUi.isEnabled = it != null && it.webUiAvailable
 
                     prefImportConfiguration.isEnabled = it != null
                     prefExportConfiguration.isEnabled = it != null
@@ -195,10 +195,14 @@ class SettingsFragment : PreferenceBaseFragment(), Preference.OnPreferenceClickL
                             getString(R.string.notification_persistent_running_title)
                         SyncthingService.RunState.NOT_RUNNING ->
                             getString(R.string.notification_persistent_not_running_title)
+                        SyncthingService.RunState.PAUSED ->
+                            getString(R.string.notification_persistent_paused_title)
                         SyncthingService.RunState.STARTING ->
                             getString(R.string.notification_persistent_starting_title)
                         SyncthingService.RunState.STOPPING ->
                             getString(R.string.notification_persistent_stopping_title)
+                        SyncthingService.RunState.PAUSING ->
+                            getString(R.string.notification_persistent_pausing_title)
                         SyncthingService.RunState.IMPORTING ->
                             getString(R.string.notification_persistent_importing_title)
                         SyncthingService.RunState.EXPORTING ->

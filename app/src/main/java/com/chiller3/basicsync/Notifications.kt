@@ -64,8 +64,10 @@ class Notifications(private val context: Context) {
         val titleResId = when (state.runState) {
             SyncthingService.RunState.RUNNING -> R.string.notification_persistent_running_title
             SyncthingService.RunState.NOT_RUNNING -> R.string.notification_persistent_not_running_title
+            SyncthingService.RunState.PAUSED -> R.string.notification_persistent_paused_title
             SyncthingService.RunState.STARTING -> R.string.notification_persistent_starting_title
             SyncthingService.RunState.STOPPING -> R.string.notification_persistent_stopping_title
+            SyncthingService.RunState.PAUSING -> R.string.notification_persistent_pausing_title
             SyncthingService.RunState.IMPORTING -> R.string.notification_persistent_importing_title
             SyncthingService.RunState.EXPORTING -> R.string.notification_persistent_exporting_title
         }
@@ -101,7 +103,7 @@ class Notifications(private val context: Context) {
                 ).build())
             }
 
-            val primaryIntent = if (state.runState == SyncthingService.RunState.RUNNING) {
+            val primaryIntent = if (state.runState.webUiAvailable) {
                 Intent(context, WebUiActivity::class.java)
             } else {
                 Intent(context, SettingsActivity::class.java)

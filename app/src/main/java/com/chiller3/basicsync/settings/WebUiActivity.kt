@@ -28,6 +28,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.net.toUri
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updateLayoutParams
@@ -37,12 +38,10 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.chiller3.basicsync.R
 import com.chiller3.basicsync.databinding.WebUiActivityBinding
 import com.chiller3.basicsync.dialog.FolderPickerDialogFragment
-import com.chiller3.basicsync.syncthing.SyncthingService
 import kotlinx.coroutines.launch
 import java.io.ByteArrayInputStream
 import java.security.cert.CertificateFactory
 import java.security.cert.X509Certificate
-import androidx.core.net.toUri
 
 class WebUiActivity : AppCompatActivity() {
     companion object {
@@ -208,10 +207,8 @@ class WebUiActivity : AppCompatActivity() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.CREATED) {
                 viewModel.runState.collect {
-                    when (it) {
-                        SyncthingService.RunState.NOT_RUNNING,
-                        SyncthingService.RunState.STOPPING -> finish()
-                        else -> {}
+                    if (it != null && !it.webUiAvailable) {
+                        finish()
                     }
                 }
             }

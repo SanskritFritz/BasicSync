@@ -33,6 +33,8 @@
     <string name="pref_require_unmetered_network_desc">Only run if the device is connected to an unmetered network (eg. Wi-Fi).</string>
     <string name="pref_require_sufficient_battery_name">Require sufficient battery level</string>
     <string name="pref_require_sufficient_battery_desc">Only run if the battery level is not low or if the device is charging.</string>
+    <string name="pref_keep_alive_name">Keep Syncthing alive</string>
+    <string name="pref_keep_alive_desc">When Syncthing should not run, pause it instead of shutting it down. The avoids a potential performance hit when scanning large folders on startup.</string>
     <string name="pref_version_name">Version</string>
     <string name="pref_save_logs_name">Save logs</string>
     <string name="pref_save_logs_desc">Save logcat logs to a file.</string>
@@ -65,8 +67,10 @@
     <string name="notification_channel_failure_desc">Alerts for errors when starting Syncthing</string>
     <string name="notification_persistent_running_title">Syncthing is running</string>
     <string name="notification_persistent_not_running_title">Syncthing is not running</string>
+    <string name="notification_persistent_paused_title">Syncthing is paused</string>
     <string name="notification_persistent_starting_title">Syncthing is starting</string>
     <string name="notification_persistent_stopping_title">Syncthing is stopping</string>
+    <string name="notification_persistent_pausing_title">Syncthing is pausing</string>
     <string name="notification_persistent_importing_title">Importing configuration</string>
     <string name="notification_persistent_exporting_title">Exporting configuration</string>
     <string name="notification_failure_run_title">Failed to run Syncthing</string>

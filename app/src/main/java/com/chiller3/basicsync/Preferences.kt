@@ -19,6 +19,7 @@ class Preferences(context: Context) {
         // Main preferences.
         const val PREF_REQUIRE_UNMETERED_NETWORK = "require_unmetered_network"
         const val PREF_REQUIRE_SUFFICIENT_BATTERY = "require_sufficient_battery"
+        const val PREF_KEEP_ALIVE = "keep_alive"
 
         // Main UI actions only.
         const val PREF_INHIBIT_BATTERY_OPT = "inhibit_battery_opt"
@@ -56,6 +57,10 @@ class Preferences(context: Context) {
     var requireSufficientBattery: Boolean
         get() = prefs.getBoolean(PREF_REQUIRE_SUFFICIENT_BATTERY, true)
         set(enabled) = prefs.edit { putBoolean(PREF_REQUIRE_SUFFICIENT_BATTERY, enabled) }
+
+    var keepAlive: Boolean
+        get() = prefs.getBoolean(PREF_KEEP_ALIVE, true)
+        set(enabled) = prefs.edit { putBoolean(PREF_KEEP_ALIVE, enabled) }
 
     var isDebugMode: Boolean
         get() = prefs.getBoolean(PREF_DEBUG_MODE, false)

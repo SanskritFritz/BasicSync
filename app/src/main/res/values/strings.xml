@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    SPDX-FileCopyrightText: 2025 Andrew Gunnerson
+    SPDX-FileCopyrightText: 2025-2026 Andrew Gunnerson
     SPDX-License-Identifier: GPL-3.0-only
 -->
 <resources>
@@ -33,6 +33,8 @@
     <string name="pref_require_unmetered_network_desc">Only run if the device is connected to an unmetered network (eg. Wi-Fi).</string>
     <string name="pref_require_sufficient_battery_name">Require sufficient battery level</string>
     <string name="pref_require_sufficient_battery_desc">Only run if the battery level is not low or if the device is charging.</string>
+    <string name="pref_respect_battery_saver_name">Respect battery saver mode</string>
+    <string name="pref_respect_battery_saver_desc">Only run when Android\'s battery saver mode is disabled.</string>
     <string name="pref_keep_alive_name">Keep Syncthing alive</string>
     <string name="pref_keep_alive_desc">When Syncthing should not run, pause it instead of shutting it down. The avoids a potential performance hit when scanning large folders on startup.</string>
     <string name="pref_version_name">Version</string>

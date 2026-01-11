@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Andrew Gunnerson
+ * SPDX-FileCopyrightText: 2025-2026 Andrew Gunnerson
  * SPDX-License-Identifier: GPL-3.0-only
  */
 
@@ -22,6 +22,7 @@ import android.os.BatteryManager
 import android.os.Binder
 import android.os.Build
 import android.os.IBinder
+import android.os.PowerManager
 import android.util.Log
 import androidx.annotation.GuardedBy
 import androidx.annotation.WorkerThread
@@ -179,6 +180,7 @@ class SyncthingService : Service(), SyncthingStatusReceiver,
     private lateinit var prefs: Preferences
     private lateinit var notifications: Notifications
     private lateinit var connectivityManager: ConnectivityManager
+    private lateinit var powerManager: PowerManager
     private val runnerThread = Thread(::runner)
 
     private val stateLock = Object()
@@ -194,6 +196,8 @@ class SyncthingService : Service(), SyncthingStatusReceiver,
     private var networkSufficient = false
     @GuardedBy("stateLock")
     private var batterySufficient = false
+    @GuardedBy("stateLock")
+    private var isBatterySaverMode = false
 
     @GuardedBy("stateLock")
     private var runningProxyInfo: ProxyInfo? = null
@@ -205,6 +209,7 @@ class SyncthingService : Service(), SyncthingStatusReceiver,
         get() = networkConnected
                 && (!prefs.requireUnmeteredNetwork || networkSufficient)
                 && (!prefs.requireSufficientBattery || batterySufficient)
+                && (!prefs.respectBatterySaver || !isBatterySaverMode)
 
     private val shouldRun: Boolean
         @GuardedBy("stateLock")
@@ -314,6 +319,18 @@ class SyncthingService : Service(), SyncthingStatusReceiver,
         }
     }
 
+    private val batterySaverReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            synchronized(stateLock) {
+                isBatterySaverMode = powerManager.isPowerSaveMode
+
+                Log.d(TAG, "Battery saver mode changed: $isBatterySaverMode")
+
+                stateChanged()
+            }
+        }
+    }
+
     private val proxyChangeReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             Log.d(TAG, "Proxy settings changed")
@@ -344,7 +361,11 @@ class SyncthingService : Service(), SyncthingStatusReceiver,
         connectivityManager = getSystemService(ConnectivityManager::class.java)
         connectivityManager.registerDefaultNetworkCallback(networkCallback)
 
+        powerManager = getSystemService(PowerManager::class.java)
+        isBatterySaverMode = powerManager.isPowerSaveMode
+
         registerReceiver(batteryStatusReceiver, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+        registerReceiver(batterySaverReceiver, IntentFilter(PowerManager.ACTION_POWER_SAVE_MODE_CHANGED))
         registerReceiver(proxyChangeReceiver, IntentFilter(Proxy.PROXY_CHANGE_ACTION))
 
         runnerThread.start()
@@ -398,6 +419,7 @@ class SyncthingService : Service(), SyncthingStatusReceiver,
             Preferences.PREF_MANUAL_SHOULD_RUN,
             Preferences.PREF_REQUIRE_UNMETERED_NETWORK,
             Preferences.PREF_REQUIRE_SUFFICIENT_BATTERY,
+            Preferences.PREF_RESPECT_BATTERY_SAVER,
             Preferences.PREF_KEEP_ALIVE -> stateChanged()
             Preferences.PREF_DEBUG_MODE -> setLogLevel()
         }

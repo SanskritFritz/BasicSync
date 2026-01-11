@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Andrew Gunnerson
+ * SPDX-FileCopyrightText: 2023-2026 Andrew Gunnerson
  * SPDX-License-Identifier: GPL-3.0-only
  */
 
@@ -19,6 +19,7 @@ class Preferences(context: Context) {
         // Main preferences.
         const val PREF_REQUIRE_UNMETERED_NETWORK = "require_unmetered_network"
         const val PREF_REQUIRE_SUFFICIENT_BATTERY = "require_sufficient_battery"
+        const val PREF_RESPECT_BATTERY_SAVER = "respect_battery_saver"
         const val PREF_KEEP_ALIVE = "keep_alive"
 
         // Main UI actions only.
@@ -57,6 +58,10 @@ class Preferences(context: Context) {
     var requireSufficientBattery: Boolean
         get() = prefs.getBoolean(PREF_REQUIRE_SUFFICIENT_BATTERY, true)
         set(enabled) = prefs.edit { putBoolean(PREF_REQUIRE_SUFFICIENT_BATTERY, enabled) }
+
+    var respectBatterySaver: Boolean
+        get() = prefs.getBoolean(PREF_RESPECT_BATTERY_SAVER, true)
+        set(enabled) = prefs.edit { putBoolean(PREF_RESPECT_BATTERY_SAVER, enabled) }
 
     var keepAlive: Boolean
         get() = prefs.getBoolean(PREF_KEEP_ALIVE, true)

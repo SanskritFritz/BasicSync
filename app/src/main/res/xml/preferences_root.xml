@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    SPDX-FileCopyrightText: 2023-2025 Andrew Gunnerson
+    SPDX-FileCopyrightText: 2023-2026 Andrew Gunnerson
     SPDX-License-Identifier: GPL-3.0-only
 -->
 <PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
@@ -94,6 +94,13 @@
             app:defaultValue="true"
             app:title="@string/pref_require_sufficient_battery_name"
             app:summary="@string/pref_require_sufficient_battery_desc"
+            app:iconSpaceReserved="false" />
+
+        <SwitchPreferenceCompat
+            app:key="respect_battery_saver"
+            app:defaultValue="true"
+            app:title="@string/pref_respect_battery_saver_name"
+            app:summary="@string/pref_respect_battery_saver_desc"
             app:iconSpaceReserved="false" />
 
         <SwitchPreferenceCompat

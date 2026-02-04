@@ -9,6 +9,7 @@
 
 ### Unreleased
 
+* Update syncthing to 2.0.14 ([PR #10])
 * Update AGP to 9.0.0 ([PR #9])
 
 ### Version 1.3
@@ -41,3 +42,4 @@
 [PR #6]: https://github.com/chenxiaolong/BasicSync/pull/6
 [PR #7]: https://github.com/chenxiaolong/BasicSync/pull/7
 [PR #9]: https://github.com/chenxiaolong/BasicSync/pull/9
+[PR #10]: https://github.com/chenxiaolong/BasicSync/pull/10

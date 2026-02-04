@@ -7,7 +7,7 @@
     to update the actual links at the bottom of the file.
 -->
 
-### Unreleased
+### Version 1.4
 
 * Update syncthing to 2.0.14 ([PR #10])
 * Disable badge (dot on launcher icon) for persistent notifications by default ([PR #11])

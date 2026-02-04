@@ -10,6 +10,8 @@
 ### Unreleased
 
 * Update syncthing to 2.0.14 ([PR #10])
+* Disable badge (dot on launcher icon) for persistent notifications by default ([PR #11])
+  * This only applies to new installs. For existing installs, this can be disabled from Android's notification settings for BasicSync's "Background services" notification channel.
 * Update AGP to 9.0.0 ([PR #9])
 
 ### Version 1.3
@@ -43,3 +45,4 @@
 [PR #7]: https://github.com/chenxiaolong/BasicSync/pull/7
 [PR #9]: https://github.com/chenxiaolong/BasicSync/pull/9
 [PR #10]: https://github.com/chenxiaolong/BasicSync/pull/10
+[PR #11]: https://github.com/chenxiaolong/BasicSync/pull/11

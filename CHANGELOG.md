@@ -7,6 +7,10 @@
     to update the actual links at the bottom of the file.
 -->
 
+### Unreleased
+
+* Enable MTE on supported devices ([Issue #12], [PR #13])
+
 ### Version 1.4
 
 * Update syncthing to 2.0.14 ([PR #10])
@@ -37,6 +41,7 @@
 * Initial release
 
 <!-- Do not manually edit the lines below. Use `./gradlew changelogUpdateLinks` to regenerate. -->
+[Issue #12]: https://github.com/chenxiaolong/BasicSync/issues/12
 [PR #2]: https://github.com/chenxiaolong/BasicSync/pull/2
 [PR #3]: https://github.com/chenxiaolong/BasicSync/pull/3
 [PR #4]: https://github.com/chenxiaolong/BasicSync/pull/4
@@ -46,3 +51,4 @@
 [PR #9]: https://github.com/chenxiaolong/BasicSync/pull/9
 [PR #10]: https://github.com/chenxiaolong/BasicSync/pull/10
 [PR #11]: https://github.com/chenxiaolong/BasicSync/pull/11
+[PR #13]: https://github.com/chenxiaolong/BasicSync/pull/13

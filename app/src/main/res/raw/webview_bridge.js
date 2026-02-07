@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Andrew Gunnerson
+ * SPDX-FileCopyrightText: 2025-2026 Andrew Gunnerson
  * SPDX-License-Identifier: GPL-3.0-only
  */
 
@@ -166,10 +166,12 @@ function tryMutate() {
 
 function onFolderSelected(path) {
     elemFolderPath.value = path;
+    elemFolderPath.dispatchEvent(new InputEvent('input'));
 }
 
 function onDeviceIdScanned(deviceId) {
     elemDeviceId.value = deviceId;
+    elemDeviceId.dispatchEvent(new InputEvent('input'));
 }
 
 if (!tryMutate()) {

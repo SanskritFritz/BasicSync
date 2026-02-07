@@ -7,6 +7,10 @@
     to update the actual links at the bottom of the file.
 -->
 
+### Unreleased
+
+* Fix save button not being enabled after selecting a folder path or scanning a device QR code ([PR #15])
+
 ### Version 1.5
 
 * Enable MTE on supported devices ([Issue #12], [PR #13])
@@ -52,3 +56,4 @@
 [PR #10]: https://github.com/chenxiaolong/BasicSync/pull/10
 [PR #11]: https://github.com/chenxiaolong/BasicSync/pull/11
 [PR #13]: https://github.com/chenxiaolong/BasicSync/pull/13
+[PR #15]: https://github.com/chenxiaolong/BasicSync/pull/15

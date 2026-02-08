@@ -12,6 +12,7 @@
 * Fix save button not being enabled after selecting a folder path or scanning a device QR code ([PR #15])
 * Fix device ID not being filled in when scanning a QR code the second time after adding or editing a device ([PR #16])
 * Fix QR code scanner button being clickable when editing an existing device ([PR #17])
+* Add support for customizing the minimum battery level threshold ([Issue #14], [PR #18])
 
 ### Version 1.5
 
@@ -48,6 +49,7 @@
 
 <!-- Do not manually edit the lines below. Use `./gradlew changelogUpdateLinks` to regenerate. -->
 [Issue #12]: https://github.com/chenxiaolong/BasicSync/issues/12
+[Issue #14]: https://github.com/chenxiaolong/BasicSync/issues/14
 [PR #2]: https://github.com/chenxiaolong/BasicSync/pull/2
 [PR #3]: https://github.com/chenxiaolong/BasicSync/pull/3
 [PR #4]: https://github.com/chenxiaolong/BasicSync/pull/4
@@ -61,3 +63,4 @@
 [PR #15]: https://github.com/chenxiaolong/BasicSync/pull/15
 [PR #16]: https://github.com/chenxiaolong/BasicSync/pull/16
 [PR #17]: https://github.com/chenxiaolong/BasicSync/pull/17
+[PR #18]: https://github.com/chenxiaolong/BasicSync/pull/18

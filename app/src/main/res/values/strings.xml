@@ -29,8 +29,8 @@
     <string name="pref_service_status_name">Syncthing status</string>
     <string name="pref_auto_mode_name">Auto mode</string>
     <string name="pref_auto_mode_desc">Automatically start and stop based on the specified conditions.</string>
-    <string name="pref_require_unmetered_network_name">Require unmetered network</string>
-    <string name="pref_require_unmetered_network_desc">Only run if the device is connected to an unmetered network (eg. Wi-Fi).</string>
+    <string name="pref_network_conditions_name">Network conditions</string>
+    <string name="pref_network_conditions_desc">Run when connected to certain network types or Wi-Fi networks.</string>
     <string name="pref_run_on_battery_name">Run on battery power</string>
     <string name="pref_run_on_battery_desc">Run when the device is on battery power and the battery level is at least %1$d%%. Syncthing always runs when plugged in.</string>
     <string name="pref_respect_battery_saver_name">Respect battery saver mode</string>
@@ -40,6 +40,23 @@
     <string name="pref_version_name">Version</string>
     <string name="pref_save_logs_name">Save logs</string>
     <string name="pref_save_logs_desc">Save logcat logs to a file.</string>
+
+    <!-- Network condition preferences -->
+    <string name="pref_header_allowed_network_types">Allowed network types</string>
+    <string name="pref_header_allowed_wifi_networks">Allowed Wi-Fi networks</string>
+    <string name="pref_header_available_wifi_networks">Available Wi-Fi networks</string>
+    <string name="pref_require_unmetered_network_name">Require unmetered network</string>
+    <string name="pref_network_allow_wifi_name">Allow Wi-Fi</string>
+    <string name="pref_network_allow_cellular_name">Allow mobile data</string>
+    <string name="pref_network_allow_ethernet_name">Allow ethernet</string>
+    <string name="pref_network_allow_other_name">Allow other network interfaces</string>
+    <string name="pref_location_optional_info">Location permissions are optional and are only needed when restricting allowed Wi-Fi networks. Even if the permissions are granted, they will not be used unless there are allowed Wi-Fi networks configured.</string>
+    <string name="pref_allow_precise_location_name">Allow precise location access</string>
+    <string name="pref_allow_precise_location_desc">Required for accessing Wi-Fi connection details at all.</string>
+    <string name="pref_allow_background_location_name">Allow background location access</string>
+    <string name="pref_allow_background_location_desc">Required for accessing Wi-Fi connection details in the background.</string>
+    <string name="pref_wifi_networks_info">When using Wi-Fi, only run if connected to the specified networks. If no networks are specified, then all networks are allowed.</string>
+    <string name="pref_add_wifi_network_name">Manually add Wi-Fi network</string>
 
     <!-- Alerts -->
     <string name="action_details">Details</string>
@@ -60,6 +77,9 @@
     <string name="dialog_min_battery_level_title">Minimum battery level</string>
     <string name="dialog_min_battery_level_message">Enter the minimum battery level needed for Syncthing to run.</string>
     <string name="dialog_min_battery_level_hint">Percentage</string>
+    <string name="dialog_wifi_network_title">Wi-Fi network</string>
+    <string name="dialog_wifi_network_message">Enter the name (SSID) of the Wi-Fi network. This also works for hidden Wi-Fi networks.</string>
+    <string name="dialog_wifi_network_hint">SSID</string>
 
     <!-- Web UI extra buttons -->
     <string name="web_ui_select_folder">Select folder</string>

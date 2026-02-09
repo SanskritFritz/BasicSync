@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Andrew Gunnerson
+ * SPDX-FileCopyrightText: 2025-2026 Andrew Gunnerson
  * SPDX-License-Identifier: GPL-3.0-only
  */
 
@@ -8,22 +8,28 @@ package com.chiller3.basicsync.dialog
 import android.content.Context
 import com.chiller3.basicsync.R
 
-class NewFolderDialogFragment : TextInputDialogFragment() {
+class NewFolderDialogFragment : TextInputDialogFragment<String>() {
     companion object {
+        val TAG: String = NewFolderDialogFragment::class.java.simpleName
+
         const val RESULT_SUCCESS = TextInputDialogFragment.RESULT_SUCCESS
-        const val RESULT_INPUT = TextInputDialogFragment.RESULT_INPUT
+        const val RESULT_NAME = RESULT_VALUE
 
         fun newInstance(context: Context, cwd: String) =
             NewFolderDialogFragment().apply {
-                arguments = toArgs(
-                    context.getString(R.string.dialog_new_folder_title),
-                    context.getString(R.string.dialog_new_folder_message, cwd),
-                    context.getString(R.string.dialog_new_folder_hint),
-                    false,
-                )
+                arguments = TextInputParams(
+                    title = context.getString(R.string.dialog_new_folder_title),
+                    message = context.getString(R.string.dialog_new_folder_message, cwd),
+                    hint = context.getString(R.string.dialog_new_folder_hint),
+                    inputType = TextInputType.NORMAL,
+                ).toArgs()
             }
     }
 
-    override fun isValid(input: String): Boolean =
-        input.isNotEmpty() && !input.contains('/') && input != "." && input != ".."
+    override fun translateInput(input: String): String? =
+        if (input.isNotEmpty() && !input.contains('/') && input != "." && input != "..") {
+            input
+        } else {
+            null
+        }
 }

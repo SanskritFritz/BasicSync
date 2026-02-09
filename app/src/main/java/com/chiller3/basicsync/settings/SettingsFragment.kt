@@ -81,6 +81,7 @@ class SettingsFragment : PreferenceBaseFragment(), Preference.OnPreferenceClickL
     private lateinit var prefExportConfiguration: Preference
     private lateinit var prefServiceStatus: SwitchPreferenceCompat
     private lateinit var prefAutoMode: SwitchPreferenceCompat
+    private lateinit var prefNetworkConditions: Preference
     private lateinit var prefRunOnBattery: SplitSwitchPreference
     private lateinit var prefVersion: LongClickablePreference
     private lateinit var prefSaveLogs: Preference
@@ -96,7 +97,7 @@ class SettingsFragment : PreferenceBaseFragment(), Preference.OnPreferenceClickL
             if (granted.all { it.value }) {
                 // Resend service notification so that the user can actually interact with the
                 // service.
-                startSyncthingService(SyncthingService.ACTION_RENOTIFY)
+                SyncthingService.start(requireContext(), SyncthingService.ACTION_RENOTIFY)
 
                 refreshPermissions()
             } else {
@@ -131,8 +132,6 @@ class SettingsFragment : PreferenceBaseFragment(), Preference.OnPreferenceClickL
 
         val context = requireContext()
 
-        startSyncthingService(SyncthingService.ACTION_RENOTIFY)
-
         prefs = Preferences(context)
 
         categoryPermissions = findPreference(Preferences.CATEGORY_PERMISSIONS)!!
@@ -165,6 +164,9 @@ class SettingsFragment : PreferenceBaseFragment(), Preference.OnPreferenceClickL
 
         prefAutoMode = findPreference(Preferences.PREF_AUTO_MODE)!!
         prefAutoMode.onPreferenceChangeListener = this
+
+        prefNetworkConditions = findPreference(Preferences.PREF_NETWORK_CONDITIONS)!!
+        prefNetworkConditions.onPreferenceClickListener = this
 
         prefRunOnBattery = findPreference(Preferences.PREF_RUN_ON_BATTERY)!!
         prefRunOnBattery.onPreferenceClickListener = this
@@ -227,8 +229,8 @@ class SettingsFragment : PreferenceBaseFragment(), Preference.OnPreferenceClickL
             }
         }
 
-        setFragmentResultListener(MinBatteryLevelDialogFragment.TAG) { _, bundle: Bundle ->
-            if (bundle.getBoolean(MinBatteryLevelDialogFragment.RESULT_SUCCESS)) {
+        setFragmentResultListener(MinBatteryLevelDialogFragment.TAG) { _, result ->
+            if (result.getBoolean(MinBatteryLevelDialogFragment.RESULT_SUCCESS)) {
                 refreshBattery()
             }
         }
@@ -248,12 +250,6 @@ class SettingsFragment : PreferenceBaseFragment(), Preference.OnPreferenceClickL
         super.onPause()
 
         prefs.unregisterListener(this)
-    }
-
-    private fun startSyncthingService(action: String) {
-        val context = requireContext()
-
-        context.startForegroundService(SyncthingService.createIntent(context, action))
     }
 
     private fun refreshPermissions() {
@@ -394,8 +390,12 @@ class SettingsFragment : PreferenceBaseFragment(), Preference.OnPreferenceClickL
                 requestSafExportConfiguration.launch(defaultName)
                 return true
             }
+            prefNetworkConditions -> {
+                startActivity(Intent(requireContext(), NetworkConditionsActivity::class.java))
+                return true
+            }
             prefRunOnBattery -> {
-                MinBatteryLevelDialogFragment().show(
+                MinBatteryLevelDialogFragment.newInstance(requireContext()).show(
                     parentFragmentManager.beginTransaction(),
                     MinBatteryLevelDialogFragment.TAG,
                 )
@@ -437,7 +437,7 @@ class SettingsFragment : PreferenceBaseFragment(), Preference.OnPreferenceClickL
                     SyncthingService.ACTION_STOP
                 }
 
-                startSyncthingService(action)
+                SyncthingService.start(requireContext(), action)
 
                 // The switch state will update once the state actually changes.
             }
@@ -448,7 +448,7 @@ class SettingsFragment : PreferenceBaseFragment(), Preference.OnPreferenceClickL
                     SyncthingService.ACTION_MANUAL_MODE
                 }
 
-                startSyncthingService(action)
+                SyncthingService.start(requireContext(), action)
 
                 // The switch state will update once the state actually changes.
             }

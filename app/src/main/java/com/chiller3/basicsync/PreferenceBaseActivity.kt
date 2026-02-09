@@ -15,6 +15,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updateLayoutParams
 import com.chiller3.basicsync.databinding.SettingsActivityBinding
+import com.chiller3.basicsync.syncthing.SyncthingService
 
 abstract class PreferenceBaseActivity : AppCompatActivity() {
     protected abstract val titleResId: Int
@@ -26,6 +27,10 @@ abstract class PreferenceBaseActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+
+        // Start the service no matter which activity we're in. If the user disables a permission
+        // and then returns to the app, they could be on any settings activity.
+        SyncthingService.start(this, SyncthingService.ACTION_RENOTIFY)
 
         val binding = SettingsActivityBinding.inflate(layoutInflater)
         setContentView(binding.root)

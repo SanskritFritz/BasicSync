@@ -60,6 +60,8 @@ The app is intentionally kept very basic so that the project is easy to maintain
     * Needed to allow asking for permission to disable battery optimizations.
 * `CAMERA`
     * Optionally used for scanning a device's QR code when adding a new device.
+* `ACCESS_WIFI_STATE`, `ACCESS_COARSE_LOCATION`, `ACCESS_FINE_LOCATION`, `ACCESS_BACKGROUND_LOCATION`, `FOREGROUND_SERVICE_LOCATION`
+    * Optionally used for restricting running unless connected to specific Wi-Fi networks.
 
 ## Remote access
 

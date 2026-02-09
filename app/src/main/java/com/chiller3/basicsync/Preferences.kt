@@ -17,7 +17,6 @@ class Preferences(context: Context) {
         const val CATEGORY_DEBUG = "debug"
 
         // Main preferences.
-        const val PREF_REQUIRE_UNMETERED_NETWORK = "require_unmetered_network"
         const val PREF_RUN_ON_BATTERY = "run_on_battery"
         const val PREF_MIN_BATTERY_LEVEL = "min_battery_level"
         const val PREF_RESPECT_BATTERY_SAVER = "respect_battery_saver"
@@ -33,6 +32,7 @@ class Preferences(context: Context) {
         const val PREF_EXPORT_CONFIGURATION = "export_configuration"
         const val PREF_SERVICE_STATUS = "service_status"
         const val PREF_AUTO_MODE = "auto_mode"
+        const val PREF_NETWORK_CONDITIONS = "network_conditions"
         const val PREF_VERSION = "version"
         const val PREF_SAVE_LOGS = "save_logs"
 
@@ -40,6 +40,19 @@ class Preferences(context: Context) {
         const val PREF_DEBUG_MODE = "debug_mode"
         const val PREF_MANUAL_MODE = "manual_mode"
         const val PREF_MANUAL_SHOULD_RUN = "manual_should_run"
+
+        // Network condition preferences.
+        const val CATEGORY_ALLOWED_WIFI_NETWORKS = "allowed_wifi_networks"
+        const val CATEGORY_AVAILABLE_WIFI_NETWORKS = "available_wifi_networks"
+        const val PREF_REQUIRE_UNMETERED_NETWORK = "require_unmetered_network"
+        const val PREF_NETWORK_ALLOW_WIFI = "network_allow_wifi"
+        const val PREF_NETWORK_ALLOW_CELLULAR = "network_allow_cellular"
+        const val PREF_NETWORK_ALLOW_ETHERNET = "network_allow_ethernet"
+        const val PREF_NETWORK_ALLOW_OTHER = "network_allow_other"
+        const val PREF_ALLOW_PRECISE_LOCATION = "allow_precise_location"
+        const val PREF_ALLOW_BACKGROUND_LOCATION = "allow_background_location"
+        const val PREF_ADD_NEW_NETWORK = "add_new_network"
+        const val PREF_ALLOWED_WIFI_NETWORKS = "allowed_wifi_networks"
 
         // Legacy preferences.
         private const val PREF_REQUIRE_SUFFICIENT_BATTERY = "require_sufficient_battery"
@@ -54,10 +67,6 @@ class Preferences(context: Context) {
     fun unregisterListener(listener: OnSharedPreferenceChangeListener) {
         prefs.unregisterOnSharedPreferenceChangeListener(listener)
     }
-
-    var requireUnmeteredNetwork: Boolean
-        get() = prefs.getBoolean(PREF_REQUIRE_UNMETERED_NETWORK, true)
-        set(enabled) = prefs.edit { putBoolean(PREF_REQUIRE_UNMETERED_NETWORK, enabled) }
 
     var runOnBattery: Boolean
         get() = prefs.getBoolean(PREF_RUN_ON_BATTERY, true)
@@ -74,6 +83,30 @@ class Preferences(context: Context) {
     var keepAlive: Boolean
         get() = prefs.getBoolean(PREF_KEEP_ALIVE, true)
         set(enabled) = prefs.edit { putBoolean(PREF_KEEP_ALIVE, enabled) }
+
+    var requireUnmeteredNetwork: Boolean
+        get() = prefs.getBoolean(PREF_REQUIRE_UNMETERED_NETWORK, true)
+        set(enabled) = prefs.edit { putBoolean(PREF_REQUIRE_UNMETERED_NETWORK, enabled) }
+
+    var networkAllowWifi: Boolean
+        get() = prefs.getBoolean(PREF_NETWORK_ALLOW_WIFI, true)
+        set(enabled) = prefs.edit { putBoolean(PREF_NETWORK_ALLOW_WIFI, enabled) }
+
+    var networkAllowCellular: Boolean
+        get() = prefs.getBoolean(PREF_NETWORK_ALLOW_CELLULAR, true)
+        set(enabled) = prefs.edit { putBoolean(PREF_NETWORK_ALLOW_CELLULAR, enabled) }
+
+    var networkAllowEthernet: Boolean
+        get() = prefs.getBoolean(PREF_NETWORK_ALLOW_ETHERNET, true)
+        set(enabled) = prefs.edit { putBoolean(PREF_NETWORK_ALLOW_ETHERNET, enabled) }
+
+    var networkAllowOther: Boolean
+        get() = prefs.getBoolean(PREF_NETWORK_ALLOW_OTHER, true)
+        set(enabled) = prefs.edit { putBoolean(PREF_NETWORK_ALLOW_OTHER, enabled) }
+
+    var allowedWifiNetworks: Set<String>
+        get() = prefs.getStringSet(PREF_ALLOWED_WIFI_NETWORKS, emptySet())!!
+        set(networks) = prefs.edit { putStringSet(PREF_ALLOWED_WIFI_NETWORKS, networks) }
 
     var isDebugMode: Boolean
         get() = prefs.getBoolean(PREF_DEBUG_MODE, false)

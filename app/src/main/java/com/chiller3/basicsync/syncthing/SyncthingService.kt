@@ -7,22 +7,14 @@ package com.chiller3.basicsync.syncthing
 
 import android.annotation.SuppressLint
 import android.app.Service
-import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
 import android.content.SharedPreferences
 import android.content.pm.ServiceInfo
-import android.net.ConnectivityManager
-import android.net.Network
-import android.net.NetworkCapabilities
-import android.net.Proxy
 import android.net.Uri
-import android.os.BatteryManager
 import android.os.Binder
 import android.os.Build
 import android.os.IBinder
-import android.os.PowerManager
 import android.util.Log
 import androidx.annotation.GuardedBy
 import androidx.annotation.WorkerThread
@@ -34,12 +26,17 @@ import com.chiller3.basicsync.binding.stbridge.SyncthingApp
 import com.chiller3.basicsync.binding.stbridge.SyncthingStartupConfig
 import com.chiller3.basicsync.binding.stbridge.SyncthingStatusReceiver
 import java.io.IOException
-import kotlin.math.roundToInt
 
-class SyncthingService : Service(), SyncthingStatusReceiver,
+class SyncthingService : Service(), SyncthingStatusReceiver, DeviceStateListener,
     SharedPreferences.OnSharedPreferenceChangeListener {
     companion object {
         private val TAG = SyncthingService::class.java.simpleName
+
+        private val STATE_CHANGE_PREFS = arrayOf(
+            Preferences.PREF_MANUAL_MODE,
+            Preferences.PREF_MANUAL_SHOULD_RUN,
+            Preferences.PREF_KEEP_ALIVE,
+        )
 
         val ACTION_AUTO_MODE = "${SyncthingService::class.java.canonicalName}.auto_mode"
         val ACTION_MANUAL_MODE = "${SyncthingService::class.java.canonicalName}.manual_mode"
@@ -52,24 +49,10 @@ class SyncthingService : Service(), SyncthingStatusReceiver,
                 this.action = action
             }
 
-        private fun getProxyInfo(): ProxyInfo {
-            val proxyHost = System.getProperty("http.proxyHost")
-            val proxyPort = System.getProperty("http.proxyPort")
-            val proxy = if (!proxyHost.isNullOrEmpty() && !proxyPort.isNullOrEmpty()) {
-                "$proxyHost:$proxyPort"
-            } else {
-                ""
-            }
-            val noProxy = (System.getProperty("http.nonProxyHosts") ?: "").replace('|', ',')
-
-            return ProxyInfo(proxy, noProxy)
+        fun start(context: Context, action: String?) {
+            context.startForegroundService(createIntent(context, action))
         }
     }
-
-    private data class ProxyInfo(
-        val proxy: String,
-        val noProxy: String,
-    )
 
     enum class RunState {
         RUNNING,
@@ -175,8 +158,6 @@ class SyncthingService : Service(), SyncthingStatusReceiver,
 
     private lateinit var prefs: Preferences
     private lateinit var notifications: Notifications
-    private lateinit var connectivityManager: ConnectivityManager
-    private lateinit var powerManager: PowerManager
     private val runnerThread = Thread(::runner)
 
     private val stateLock = Object()
@@ -184,30 +165,19 @@ class SyncthingService : Service(), SyncthingStatusReceiver,
     @GuardedBy("stateLock")
     private var lastServiceState: ServiceState? = null
     @GuardedBy("stateLock")
+    private var lastUseLocation: Boolean = false
+    @GuardedBy("stateLock")
     private var forceShowNotification = false
 
+    private lateinit var deviceStateTracker: DeviceStateTracker
     @GuardedBy("stateLock")
-    private var networkConnected = false
-    @GuardedBy("stateLock")
-    private var networkSufficient = false
-    @GuardedBy("stateLock")
-    private var isPluggedIn = false
-    @GuardedBy("stateLock")
-    private var batteryLevel = 0
-    @GuardedBy("stateLock")
-    private var isBatterySaverMode = false
-
+    private var deviceState = DeviceState()
     @GuardedBy("stateLock")
     private var runningProxyInfo: ProxyInfo? = null
-    @GuardedBy("stateLock")
-    private var deviceProxyInfo = getProxyInfo()
 
     private val autoShouldRun: Boolean
         @GuardedBy("stateLock")
-        get() = networkConnected
-                && (!prefs.requireUnmeteredNetwork || networkSufficient)
-                && (isPluggedIn || (prefs.runOnBattery && batteryLevel >= prefs.minBatteryLevel))
-                && (!prefs.respectBatterySaver || !isBatterySaverMode)
+        get() = deviceState.canRun(prefs)
 
     private val shouldRun: Boolean
         @GuardedBy("stateLock")
@@ -253,93 +223,6 @@ class SyncthingService : Service(), SyncthingStatusReceiver,
             )
         }
 
-    private val networkCallback = object : ConnectivityManager.NetworkCallback() {
-        override fun onAvailable(network: Network) {
-            Log.d(TAG, "Network connected")
-
-            synchronized(stateLock) {
-                networkConnected = true
-
-                stateChanged()
-            }
-        }
-
-        override fun onLost(network: Network) {
-            Log.d(TAG, "Network disconnected")
-
-            synchronized(stateLock) {
-                networkConnected = false
-
-                stateChanged()
-            }
-        }
-
-        override fun onCapabilitiesChanged(
-            network: Network,
-            networkCapabilities: NetworkCapabilities,
-        ) {
-            synchronized(stateLock) {
-                networkSufficient = if (prefs.requireUnmeteredNetwork) {
-                    networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED)
-                            || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
-                            && networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_TEMPORARILY_NOT_METERED))
-                } else {
-                    true
-                }
-
-                Log.d(TAG, "Network is unmetered: $networkSufficient")
-
-                stateChanged()
-            }
-        }
-    }
-
-    private val batteryStatusReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context, intent: Intent) {
-            val present = intent.getBooleanExtra(BatteryManager.EXTRA_PRESENT, false)
-            val plugged = intent.getIntExtra(BatteryManager.EXTRA_PLUGGED, 0) != 0
-
-            val level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
-            val scale = intent.getIntExtra(BatteryManager.EXTRA_SCALE, -1)
-            val scaledLevel = (level * 100 / scale.toFloat()).roundToInt()
-
-            Log.d(TAG, "Battery state changed: present=$present, plugged=$plugged, level=$scaledLevel")
-
-            synchronized(stateLock) {
-                isPluggedIn = !present || plugged
-                batteryLevel = scaledLevel
-
-                stateChanged()
-            }
-        }
-    }
-
-    private val batterySaverReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context, intent: Intent) {
-            synchronized(stateLock) {
-                isBatterySaverMode = powerManager.isPowerSaveMode
-
-                Log.d(TAG, "Battery saver mode changed: $isBatterySaverMode")
-
-                stateChanged()
-            }
-        }
-    }
-
-    private val proxyChangeReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context, intent: Intent) {
-            Log.d(TAG, "Proxy settings changed")
-
-            synchronized(stateLock) {
-                deviceProxyInfo = getProxyInfo()
-
-                // The service needs to be restarted for changes to take effect. The hack we do to
-                // set the proxy on the golang side can't be made thread-safe.
-                stateChanged()
-            }
-        }
-    }
-
     @GuardedBy("stateLock")
     private val listeners = HashSet<ServiceListener>()
 
@@ -353,15 +236,8 @@ class SyncthingService : Service(), SyncthingStatusReceiver,
 
         notifications = Notifications(this)
 
-        connectivityManager = getSystemService(ConnectivityManager::class.java)
-        connectivityManager.registerDefaultNetworkCallback(networkCallback)
-
-        powerManager = getSystemService(PowerManager::class.java)
-        isBatterySaverMode = powerManager.isPowerSaveMode
-
-        registerReceiver(batteryStatusReceiver, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
-        registerReceiver(batterySaverReceiver, IntentFilter(PowerManager.ACTION_POWER_SAVE_MODE_CHANGED))
-        registerReceiver(proxyChangeReceiver, IntentFilter(Proxy.PROXY_CHANGE_ACTION))
+        deviceStateTracker = DeviceStateTracker(this)
+        deviceStateTracker.registerListener(this)
 
         runnerThread.start()
     }
@@ -371,10 +247,7 @@ class SyncthingService : Service(), SyncthingStatusReceiver,
 
         prefs.unregisterListener(this)
 
-        connectivityManager.unregisterNetworkCallback(networkCallback)
-
-        unregisterReceiver(batteryStatusReceiver)
-        unregisterReceiver(proxyChangeReceiver)
+        deviceStateTracker.unregisterListener(this)
 
         Log.d(TAG, "Exiting")
     }
@@ -409,15 +282,24 @@ class SyncthingService : Service(), SyncthingStatusReceiver,
     override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences?, key: String?) {
         Log.d(TAG, "Preference $key changed")
 
+        // We have to switch foreground service and network callback types when location becomes
+        // needed or no longer needed.
+        if (key == Preferences.PREF_ALLOWED_WIFI_NETWORKS) {
+            synchronized(stateLock) {
+                forceShowNotification = true
+            }
+        }
+
         when (key) {
-            Preferences.PREF_MANUAL_MODE,
-            Preferences.PREF_MANUAL_SHOULD_RUN,
-            Preferences.PREF_REQUIRE_UNMETERED_NETWORK,
-            Preferences.PREF_RUN_ON_BATTERY,
-            Preferences.PREF_MIN_BATTERY_LEVEL,
-            Preferences.PREF_RESPECT_BATTERY_SAVER,
-            Preferences.PREF_KEEP_ALIVE -> stateChanged()
+            in STATE_CHANGE_PREFS, in DeviceState.PREFS -> stateChanged()
             Preferences.PREF_DEBUG_MODE -> setLogLevel()
+        }
+    }
+
+    override fun onDeviceStateChanged(state: DeviceState) {
+        synchronized(stateLock) {
+            deviceState = state
+            stateChanged()
         }
     }
 
@@ -456,13 +338,22 @@ class SyncthingService : Service(), SyncthingStatusReceiver,
                 }
 
                 val notification = notifications.createPersistentNotification(notificationState)
-                val type = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                    ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
-                } else {
-                    0
+                val useLocation = deviceStateTracker.canUseLocation()
+                var type = 0
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                    type = type or ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
+                }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && useLocation) {
+                    type = type or ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION
                 }
 
                 ServiceCompat.startForeground(this, Notifications.ID_PERSISTENT, notification, type)
+
+                if (lastUseLocation != useLocation) {
+                    deviceStateTracker.refreshNetworkState()
+                    lastUseLocation = useLocation
+                }
 
                 lastServiceState = notificationState
             }
@@ -473,7 +364,9 @@ class SyncthingService : Service(), SyncthingStatusReceiver,
     private fun handleStateChangeLocked() {
         val app = syncthingApp
 
-        val needFullRestart = runningProxyInfo != deviceProxyInfo || preRunActions.isNotEmpty()
+        // The service needs to be restarted for proxy changes to take effect. The hack we do to set
+        // the proxy on the golang side can't be made thread-safe.
+        val needFullRestart = runningProxyInfo != deviceState.proxyInfo || preRunActions.isNotEmpty()
 
         if (needFullRestart || isStarted != shouldStart || isActive != shouldRun) {
             if (!needFullRestart && app != null && prefs.keepAlive) {
@@ -503,8 +396,8 @@ class SyncthingService : Service(), SyncthingStatusReceiver,
                 actions.addAll(preRunActions)
                 preRunActions.clear()
 
-                runningProxyInfo = deviceProxyInfo
-                proxyInfo = deviceProxyInfo
+                runningProxyInfo = deviceState.proxyInfo
+                proxyInfo = deviceState.proxyInfo
             }
 
             if (actions.isNotEmpty()) {

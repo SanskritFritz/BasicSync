@@ -5,84 +5,45 @@
 
 package com.chiller3.basicsync.dialog
 
-import android.annotation.SuppressLint
-import android.app.Dialog
-import android.content.DialogInterface
+import android.content.Context
 import android.os.Bundle
-import android.text.InputType
-import android.view.Gravity
-import androidx.appcompat.app.AlertDialog
-import androidx.core.os.bundleOf
-import androidx.core.widget.addTextChangedListener
-import androidx.fragment.app.DialogFragment
-import androidx.fragment.app.setFragmentResult
 import com.chiller3.basicsync.Preferences
 import com.chiller3.basicsync.R
-import com.chiller3.basicsync.databinding.DialogTextInputBinding
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
-class MinBatteryLevelDialogFragment : DialogFragment() {
+class MinBatteryLevelDialogFragment : TextInputDialogFragment<Int>() {
     companion object {
         val TAG: String = MinBatteryLevelDialogFragment::class.java.simpleName
 
-        const val RESULT_SUCCESS = "success"
+        const val RESULT_SUCCESS = TextInputDialogFragment.RESULT_SUCCESS
+
+        fun newInstance(context: Context) =
+            MinBatteryLevelDialogFragment().apply {
+                arguments = TextInputParams(
+                    title = context.getString(R.string.dialog_min_battery_level_title),
+                    message = context.getString(R.string.dialog_min_battery_level_message),
+                    hint = context.getString(R.string.dialog_min_battery_level_hint),
+                    inputType = TextInputType.NUMBER,
+                    origValue = Preferences(context).minBatteryLevel.toString(),
+                ).toArgs()
+            }
     }
 
-    private lateinit var prefs: Preferences
-    private lateinit var binding: DialogTextInputBinding
-    private var minBatteryLevel: Int? = null
-    private var success: Boolean = false
-
-    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        prefs = Preferences(requireContext())
-
-        binding = DialogTextInputBinding.inflate(layoutInflater)
-        binding.message.text = getString(R.string.dialog_min_battery_level_message)
-        binding.textLayout.hint = getString(R.string.dialog_min_battery_level_hint)
-        binding.text.inputType = InputType.TYPE_CLASS_NUMBER
-        binding.text.addTextChangedListener {
-            minBatteryLevel = try {
-                val level = it.toString().toInt()
-                if (level in 0..100) {
-                    level
-                } else {
-                    null
-                }
-            } catch (_: Exception) {
+    override fun translateInput(input: String): Int? =
+        try {
+            val level = input.toInt()
+            if (level in 0..100) {
+                level
+            } else {
                 null
             }
-
-            refreshOkButtonEnabledState()
-        }
-        if (savedInstanceState == null) {
-            @SuppressLint("SetTextI18n")
-            binding.text.setText(prefs.minBatteryLevel.toString())
+        } catch (_: Exception) {
+            null
         }
 
-        return MaterialAlertDialogBuilder(requireContext())
-            .setTitle(R.string.dialog_min_battery_level_title)
-            .setView(binding.root)
-            .setPositiveButton(android.R.string.ok) { _, _ ->
-                prefs.minBatteryLevel = minBatteryLevel!!
-                success = true
-            }
-            .setNegativeButton(android.R.string.cancel, null)
-            .create()
-    }
-
-    override fun onStart() {
-        super.onStart()
-        refreshOkButtonEnabledState()
-    }
-
-    override fun onDismiss(dialog: DialogInterface) {
-        super.onDismiss(dialog)
-
-        setFragmentResult(tag!!, bundleOf(RESULT_SUCCESS to success))
-    }
-
-    private fun refreshOkButtonEnabledState() {
-        (dialog as AlertDialog?)?.getButton(AlertDialog.BUTTON_POSITIVE)?.isEnabled =
-            minBatteryLevel != null
+    override fun updateResult(result: Bundle) {
+        if (result.getBoolean(RESULT_SUCCESS)) {
+            val prefs = Preferences(requireContext())
+            prefs.minBatteryLevel = result.getInt(RESULT_VALUE)
+        }
     }
 }

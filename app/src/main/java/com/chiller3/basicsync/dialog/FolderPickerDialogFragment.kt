@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Andrew Gunnerson
+ * SPDX-FileCopyrightText: 2025-2026 Andrew Gunnerson
  * SPDX-License-Identifier: GPL-3.0-only
  */
 
@@ -28,8 +28,6 @@ import java.io.File
 class FolderPickerDialogFragment : DialogFragment(), FolderPickerAdapter.Listener {
     companion object {
         val TAG: String = FolderPickerDialogFragment::class.java.simpleName
-
-        private val TAG_NEW_FOLDER = "$TAG.new_folder"
 
         private const val ARG_PATH = "path"
         const val RESULT_SUCCESS = "success"
@@ -79,10 +77,12 @@ class FolderPickerDialogFragment : DialogFragment(), FolderPickerAdapter.Listene
                 // the button to always dismiss the dialog.
                 setOnShowListener {
                     getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener {
-                        NewFolderDialogFragment.newInstance(
-                            context,
-                            viewModel.state.value.shortCwd.toString(),
-                        ).show(parentFragmentManager.beginTransaction(), TAG_NEW_FOLDER)
+                        NewFolderDialogFragment
+                            .newInstance(context, viewModel.state.value.shortCwd.toString())
+                            .show(
+                                parentFragmentManager.beginTransaction(),
+                                NewFolderDialogFragment.TAG,
+                            )
                     }
                 }
             }
@@ -97,9 +97,9 @@ class FolderPickerDialogFragment : DialogFragment(), FolderPickerAdapter.Listene
             }
         }
 
-        setFragmentResultListener(TAG_NEW_FOLDER) { _, bundle: Bundle ->
-            if (bundle.getBoolean(NewFolderDialogFragment.RESULT_SUCCESS)) {
-                val name = bundle.getString(NewFolderDialogFragment.RESULT_INPUT)!!
+        setFragmentResultListener(NewFolderDialogFragment.TAG) { _, result ->
+            if (result.getBoolean(NewFolderDialogFragment.RESULT_SUCCESS)) {
+                val name = result.getString(NewFolderDialogFragment.RESULT_NAME)!!
 
                 viewModel.mkdir(File(name))
             }

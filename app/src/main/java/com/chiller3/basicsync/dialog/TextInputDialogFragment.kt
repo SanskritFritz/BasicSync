@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Andrew Gunnerson
+ * SPDX-FileCopyrightText: 2023-2026 Andrew Gunnerson
  * SPDX-License-Identifier: GPL-3.0-only
  */
 
@@ -17,51 +17,81 @@ import androidx.fragment.app.setFragmentResult
 import com.chiller3.basicsync.databinding.DialogTextInputBinding
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
-open class TextInputDialogFragment : DialogFragment() {
-    companion object {
-        private const val ARG_TITLE = "title"
-        private const val ARG_MESSAGE = "message"
-        private const val ARG_HINT = "hint"
-        private const val ARG_IS_PASSWORD = "is_password"
-        const val RESULT_SUCCESS = "success"
-        const val RESULT_INPUT = "input"
+private const val ARG_TITLE = "title"
+private const val ARG_MESSAGE = "message"
+private const val ARG_HINT = "hint"
+private const val ARG_INPUT_TYPE = "input_type"
+private const val ARG_ORIG_VALUE = "orig_value"
 
-        @JvmStatic
-        protected fun toArgs(title: String, message: String, hint: String, isPassword: Boolean) =
-            bundleOf(
-                ARG_TITLE to title,
-                ARG_MESSAGE to message,
-                ARG_HINT to hint,
-                ARG_IS_PASSWORD to isPassword,
-            )
+enum class TextInputType {
+    NORMAL,
+    PASSWORD,
+    NUMBER,
+}
+
+data class TextInputParams(
+    val title: String,
+    val message: String,
+    val hint: String,
+    val inputType: TextInputType,
+    val origValue: String? = null,
+) {
+    constructor(args: Bundle) : this(
+        title = args.getString(ARG_TITLE)!!,
+        message = args.getString(ARG_MESSAGE)!!,
+        hint = args.getString(ARG_HINT)!!,
+        inputType = TextInputType.entries[args.getInt(ARG_INPUT_TYPE)],
+        origValue = args.getString(ARG_ORIG_VALUE),
+    )
+
+    fun toArgs() = bundleOf(
+        ARG_TITLE to title,
+        ARG_MESSAGE to message,
+        ARG_HINT to hint,
+        ARG_INPUT_TYPE to inputType.ordinal,
+        ARG_ORIG_VALUE to origValue,
+    )
+}
+
+abstract class TextInputDialogFragment<T> : DialogFragment() {
+    companion object {
+        protected const val RESULT_SUCCESS = "success"
+        protected const val RESULT_ORIG_VALUE = "orig_value"
+        protected const val RESULT_VALUE = "value"
     }
 
     private lateinit var binding: DialogTextInputBinding
+    private lateinit var params: TextInputParams
     private var success: Boolean = false
-    private var input: String = ""
+    private var value: T? = null
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        val arguments = requireArguments()
+        params = TextInputParams(requireArguments())
 
         binding = DialogTextInputBinding.inflate(layoutInflater)
-        binding.message.text = arguments.getString(ARG_MESSAGE)
-        binding.textLayout.hint = arguments.getString(ARG_HINT)
-        binding.text.inputType = InputType.TYPE_CLASS_TEXT or
-            if (arguments.getBoolean(ARG_IS_PASSWORD)) {
-                InputType.TYPE_TEXT_VARIATION_PASSWORD
-            } else {
-                InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
-            }
+        binding.message.text = params.message
+        binding.textLayout.hint = params.hint
+        binding.text.inputType = when (params.inputType) {
+            TextInputType.NORMAL ->
+                InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
+            TextInputType.PASSWORD ->
+                InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+            TextInputType.NUMBER -> InputType.TYPE_CLASS_NUMBER
+        }
         binding.text.addTextChangedListener {
+            value = translateInput(it.toString())
+
             refreshOkButtonEnabledState()
+        }
+        if (savedInstanceState == null) {
+            binding.text.setText(params.origValue)
         }
 
         return MaterialAlertDialogBuilder(requireContext())
-            .setTitle(arguments.getString(ARG_TITLE))
+            .setTitle(params.title)
             .setView(binding.root)
             .setPositiveButton(android.R.string.ok) { _, _ ->
                 success = true
-                input = binding.text.text.toString()
             }
             .setNegativeButton(android.R.string.cancel, null)
             .create()
@@ -77,14 +107,16 @@ open class TextInputDialogFragment : DialogFragment() {
 
         setFragmentResult(tag!!, bundleOf(
             RESULT_SUCCESS to success,
-            RESULT_INPUT to input,
-        ))
+            RESULT_ORIG_VALUE to params.origValue,
+            RESULT_VALUE to value,
+        ).also(::updateResult))
     }
 
     private fun refreshOkButtonEnabledState() {
-        (dialog as AlertDialog).getButton(AlertDialog.BUTTON_POSITIVE).isEnabled =
-            isValid(binding.text.text.toString())
+        (dialog as AlertDialog?)?.getButton(AlertDialog.BUTTON_POSITIVE)?.isEnabled = value != null
     }
 
-    open fun isValid(input: String): Boolean = true
+    abstract fun translateInput(input: String): T?
+
+    open fun updateResult(result: Bundle) {}
 }

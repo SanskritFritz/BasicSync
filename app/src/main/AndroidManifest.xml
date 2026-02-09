@@ -9,6 +9,7 @@
         android:name="android.hardware.camera"
         android:required="false" />
 
+    <!-- For Syncthing to run at all. -->
     <uses-permission
         android:name="android.permission.FOREGROUND_SERVICE"
         tools:ignore="ForegroundServicesPolicy" />
@@ -16,8 +17,15 @@
         android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE"
         android:minSdkVersion="34" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+
+    <!-- For starting Syncthing on boot. -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
+    <!-- For Syncthing to access the network. -->
     <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- For Syncthing to access internal storage. -->
     <uses-permission
         android:name="android.permission.MANAGE_EXTERNAL_STORAGE"
         tools:ignore="AllFilesAccessPolicy,ScopedStorage" />
@@ -27,8 +35,20 @@
     <uses-permission
         android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="29" />
-    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
-    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+
+    <!-- For monitoring network connection state for network-based run conditions. -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <!-- For optionally running only when connected to specific Wi-Fi networks. -->
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION"
+        android:minSdkVersion="29"
+        tools:ignore="BackgroundLocationPolicy" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+
+    <!-- For optionally scanning a QR code to add a new device. -->
     <uses-permission android:name="android.permission.CAMERA" />
 
     <application
@@ -60,6 +80,10 @@
         </activity>
 
         <activity
+            android:name=".settings.NetworkConditionsActivity"
+            android:exported="false" />
+
+        <activity
             android:name=".settings.QrScannerActivity"
             android:exported="false" />
 
@@ -74,7 +98,7 @@
 
         <service
             android:name=".syncthing.SyncthingService"
-            android:foregroundServiceType="specialUse"
+            android:foregroundServiceType="specialUse|location"
             android:exported="false" />
 
         <receiver

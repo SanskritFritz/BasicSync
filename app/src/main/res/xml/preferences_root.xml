@@ -82,11 +82,11 @@
             app:summary="@string/pref_auto_mode_desc"
             app:iconSpaceReserved="false" />
 
-        <SwitchPreferenceCompat
-            app:key="require_unmetered_network"
-            app:defaultValue="true"
-            app:title="@string/pref_require_unmetered_network_name"
-            app:summary="@string/pref_require_unmetered_network_desc"
+        <Preference
+            app:key="network_conditions"
+            app:persistent="false"
+            app:title="@string/pref_network_conditions_name"
+            app:summary="@string/pref_network_conditions_desc"
             app:iconSpaceReserved="false" />
 
         <com.chiller3.basicsync.view.SplitSwitchPreference

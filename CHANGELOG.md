@@ -13,6 +13,7 @@
 * Fix device ID not being filled in when scanning a QR code the second time after adding or editing a device ([PR #16])
 * Fix QR code scanner button being clickable when editing an existing device ([PR #17])
 * Add support for customizing the minimum battery level threshold ([Issue #14], [PR #18])
+* Add support for run conditions based on network interface type or connected Wi-Fi network ([Issue #14], [PR #19])
 
 ### Version 1.5
 
@@ -64,3 +65,4 @@
 [PR #16]: https://github.com/chenxiaolong/BasicSync/pull/16
 [PR #17]: https://github.com/chenxiaolong/BasicSync/pull/17
 [PR #18]: https://github.com/chenxiaolong/BasicSync/pull/18
+[PR #19]: https://github.com/chenxiaolong/BasicSync/pull/19

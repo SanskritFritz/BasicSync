@@ -7,7 +7,7 @@
     to update the actual links at the bottom of the file.
 -->
 
-### Unreleased
+### Version 1.6
 
 * Fix save button not being enabled after selecting a folder path or scanning a device QR code ([PR #15])
 * Fix device ID not being filled in when scanning a QR code the second time after adding or editing a device ([PR #16])

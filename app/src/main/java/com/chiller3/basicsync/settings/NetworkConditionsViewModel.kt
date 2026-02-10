@@ -17,6 +17,7 @@ import com.chiller3.basicsync.syncthing.DeviceState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlin.math.max
 
 class NetworkConditionsViewModel(application: Application) : AndroidViewModel(application),
     WifiScanResultsWatcher.Listener {
@@ -30,7 +31,7 @@ class NetworkConditionsViewModel(application: Application) : AndroidViewModel(ap
     private val _allowed = MutableStateFlow(emptyList<String>())
     val allowed = _allowed.asStateFlow()
 
-    private val _rawAvailable = MutableStateFlow(emptySet<String>())
+    private val _rawAvailable = MutableStateFlow(emptyList<String>())
     private val _available = MutableStateFlow(emptyList<String>())
     val available = _available.asStateFlow()
 
@@ -51,6 +52,7 @@ class NetworkConditionsViewModel(application: Application) : AndroidViewModel(ap
 
     private fun refreshNetworks() {
         val newAllowed = prefs.allowedWifiNetworks.sorted()
+        // Already sorted by signal strength.
         val newAvailable = _rawAvailable.value
             .asSequence()
             .mapNotNull { a ->
@@ -62,8 +64,7 @@ class NetworkConditionsViewModel(application: Application) : AndroidViewModel(ap
                     null
                 }
             }
-            .toMutableList()
-        newAvailable.sort()
+            .toList()
 
         _allowed.update { newAllowed }
         _available.update { newAvailable }
@@ -112,22 +113,32 @@ class NetworkConditionsViewModel(application: Application) : AndroidViewModel(ap
         val results = wifiManager.scanResults
         Log.d(TAG, "Received ${results.size} scan result(s)")
 
-        val networks = results
-            .asSequence()
-            .mapNotNull {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    it.wifiSsid?.toString()?.let(DeviceState::normalizeSsid)
-                } else {
-                    // Older versions of Android don't support non-UTF-8 SSIDs at all.
-                    @Suppress("DEPRECATION")
-                    it.SSID
-                }
+        val networks = mutableMapOf<String, Int>()
+
+        for (result in results) {
+            val ssid = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                result.wifiSsid?.toString()?.let(DeviceState::normalizeSsid)
+            } else {
+                // Older versions of Android don't support non-UTF-8 SSIDs at all.
+                @Suppress("DEPRECATION")
+                result.SSID
             }
-            .toSet()
+            if (ssid == null) {
+                continue
+            }
+
+            networks[ssid] = max(networks.getOrDefault(ssid, result.level), result.level)
+        }
 
         Log.d(TAG, "${networks.size} unique SSIDs")
 
-        _rawAvailable.update { networks }
+        _rawAvailable.update {
+            networks
+                .asSequence()
+                .sortedByDescending { it.value }
+                .map { it.key }
+                .toList()
+        }
         refreshNetworks()
     }
 

@@ -123,7 +123,9 @@ class NetworkConditionsViewModel(application: Application) : AndroidViewModel(ap
                 @Suppress("DEPRECATION")
                 result.SSID
             }
-            if (ssid == null) {
+            // Skip valid SSIDs consisting solely of control characters too. They're basically
+            // uneditable by the user and frequently just look like empty strings.
+            if (ssid == null || ssid.all { it.category == CharCategory.CONTROL }) {
                 continue
             }
 

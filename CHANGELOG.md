@@ -7,6 +7,10 @@
     to update the actual links at the bottom of the file.
 -->
 
+### Unreleased
+
+* Shut down all listening sockets when syncthing is paused ([Issue #26], [PR #27])
+
 ### Version 1.7
 
 * Reenable default proguard optimizations ([PR #21], [PR #22])
@@ -59,6 +63,7 @@
 <!-- Do not manually edit the lines below. Use `./gradlew changelogUpdateLinks` to regenerate. -->
 [Issue #12]: https://github.com/chenxiaolong/BasicSync/issues/12
 [Issue #14]: https://github.com/chenxiaolong/BasicSync/issues/14
+[Issue #26]: https://github.com/chenxiaolong/BasicSync/issues/26
 [PR #2]: https://github.com/chenxiaolong/BasicSync/pull/2
 [PR #3]: https://github.com/chenxiaolong/BasicSync/pull/3
 [PR #4]: https://github.com/chenxiaolong/BasicSync/pull/4
@@ -79,3 +84,4 @@
 [PR #23]: https://github.com/chenxiaolong/BasicSync/pull/23
 [PR #24]: https://github.com/chenxiaolong/BasicSync/pull/24
 [PR #25]: https://github.com/chenxiaolong/BasicSync/pull/25
+[PR #27]: https://github.com/chenxiaolong/BasicSync/pull/27

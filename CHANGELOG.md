@@ -10,6 +10,7 @@
 ### Unreleased
 
 * Shut down all listening sockets when syncthing is paused ([Issue #26], [PR #27])
+* Ensure that the golang fork is always used, even if the host toolchain is newer ([PR #31])
 
 ### Version 1.7
 
@@ -85,3 +86,4 @@
 [PR #24]: https://github.com/chenxiaolong/BasicSync/pull/24
 [PR #25]: https://github.com/chenxiaolong/BasicSync/pull/25
 [PR #27]: https://github.com/chenxiaolong/BasicSync/pull/27
+[PR #31]: https://github.com/chenxiaolong/BasicSync/pull/31

@@ -7,6 +7,7 @@ package com.chiller3.basicsync
 
 import android.app.Application
 import android.util.Log
+import com.chiller3.basicsync.binding.stbridge.Stbridge
 import com.google.android.material.color.DynamicColors
 import java.io.File
 
@@ -38,5 +39,7 @@ class MainApplication : Application() {
         DynamicColors.applyToActivitiesIfAvailable(this)
 
         Preferences(this).migrate()
+
+        Stbridge.initDirs(filesDir.toString(), cacheDir.toString())
     }
 }

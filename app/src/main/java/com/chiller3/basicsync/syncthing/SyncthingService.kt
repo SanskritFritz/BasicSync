@@ -446,7 +446,6 @@ class SyncthingService : Service(), SyncthingStatusReceiver, DeviceStateListener
 
             try {
                 Stbridge.run(SyncthingStartupConfig().apply {
-                    filesDir = this@SyncthingService.filesDir.toString()
                     deviceModel = Build.MODEL
                     proxy = proxyInfo.proxy
                     noProxy = proxyInfo.noProxy

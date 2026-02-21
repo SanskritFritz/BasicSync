@@ -26,6 +26,7 @@ import (
 	_ "unsafe"
 
 	_ "golang.org/x/mobile/event/key"
+	"golang.org/x/sys/unix"
 
 	_ "github.com/syncthing/syncthing/cmd/syncthing/cli"
 	"github.com/syncthing/syncthing/lib/build"
@@ -169,6 +170,29 @@ func SetLogLevel(level string) error {
 	return nil
 }
 
+func InitDirs(filesDir string, cacheDir string) error {
+	stLock.Lock()
+	defer stLock.Unlock()
+
+	configDir := filepath.Join(filesDir, "syncthing")
+	if err := locations.SetBaseDir(locations.ConfigBaseDir, configDir); err != nil {
+		return fmt.Errorf("failed to set config directory: %w", err)
+	} else if err := locations.SetBaseDir(locations.DataBaseDir, configDir); err != nil {
+		return fmt.Errorf("failed to set data directory: %w", err)
+	}
+	log.Print(locations.PrettyPaths())
+
+	// Older Android versions do not set TMPDIR, causing bionic and the go
+	// runtime to default to /data/local/tmp, which we can't write to.
+	//
+	// https://android.googlesource.com/platform/frameworks/base/+/d5ccb038f69193fb63b5169d7adc5da19859c9d8%5E%21/
+	if _, ok := os.LookupEnv("TMPDIR"); !ok {
+		os.Setenv("TMPDIR", cacheDir)
+	}
+
+	return nil
+}
+
 type SyncthingApp struct {
 	app     *syncthing.App
 	cfg     config.Wrapper
@@ -217,7 +241,6 @@ type SyncthingStatusReceiver interface {
 }
 
 type SyncthingStartupConfig struct {
-	FilesDir    string
 	DeviceModel string
 	Proxy       string
 	NoProxy     string
@@ -227,14 +250,6 @@ type SyncthingStartupConfig struct {
 func Run(startup *SyncthingStartupConfig) error {
 	stLock.Lock()
 	defer stLock.Unlock()
-
-	configDir := filepath.Join(startup.FilesDir, "syncthing")
-	if err := locations.SetBaseDir(locations.ConfigBaseDir, configDir); err != nil {
-		return fmt.Errorf("failed to set config directory: %w", err)
-	} else if err := locations.SetBaseDir(locations.DataBaseDir, configDir); err != nil {
-		return fmt.Errorf("failed to set data directory: %w", err)
-	}
-	log.Print(locations.PrettyPaths())
 
 	applyProxySettings(startup.Proxy, startup.NoProxy)
 
@@ -422,11 +437,15 @@ func ImportConfiguration(fd int, name string, password string) error {
 		return err
 	}
 
-	configDir := filepath.Clean(locations.GetBaseDir(locations.ConfigBaseDir))
-
-	if err := os.RemoveAll(configDir); err != nil {
-		return fmt.Errorf("failed to delete: %q: %w", configDir, err)
+	tempDir, err := os.MkdirTemp("", "config_import")
+	if err != nil {
+		return fmt.Errorf("failed to create temp dir: %w", err)
 	}
+	defer func() {
+		if err := os.RemoveAll(tempDir); err != nil {
+			log.Printf("failed to delete: %q: %w", tempDir, err)
+		}
+	}()
 
 	extractEntry := func(f *zip.File) error {
 		if f.IsEncrypted() && password != "" {
@@ -449,8 +468,8 @@ func ImportConfiguration(fd int, name string, password string) error {
 		}
 
 		// Join() normalizes the path too.
-		path := filepath.Join(configDir, f.Name)
-		if !strings.HasPrefix(path, configDir+string(os.PathSeparator)) {
+		path := filepath.Join(tempDir, f.Name)
+		if !strings.HasPrefix(path, tempDir+string(os.PathSeparator)) {
 			return fmt.Errorf("unsafe entry path: %q", f.Name)
 		}
 
@@ -476,6 +495,15 @@ func ImportConfiguration(fd int, name string, password string) error {
 		if err := extractEntry(f); err != nil {
 			return err
 		}
+	}
+
+	configDir := locations.GetBaseDir(locations.ConfigBaseDir)
+
+	// Atomically swap the active config dir with the temp dir. The temp dir
+	// cleanup above will delete the old files.
+	err = unix.Renameat2(unix.AT_FDCWD, tempDir, unix.AT_FDCWD, configDir, unix.RENAME_EXCHANGE)
+	if err != nil {
+		return fmt.Errorf("failed to swap: %q <-> %q: %w", tempDir, configDir, err)
 	}
 
 	return nil

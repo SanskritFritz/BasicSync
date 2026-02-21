@@ -7,6 +7,11 @@
     to update the actual links at the bottom of the file.
 -->
 
+### Unreleased
+
+* Make configuration import atomic ([PR #37])
+  * If the import fails, the existing configuration remains unchanged now.
+
 ### Version 1.8
 
 * Shut down all listening sockets when syncthing is paused ([Issue #26], [PR #27])
@@ -95,3 +100,4 @@
 [PR #32]: https://github.com/chenxiaolong/BasicSync/pull/32
 [PR #33]: https://github.com/chenxiaolong/BasicSync/pull/33
 [PR #34]: https://github.com/chenxiaolong/BasicSync/pull/34
+[PR #37]: https://github.com/chenxiaolong/BasicSync/pull/37

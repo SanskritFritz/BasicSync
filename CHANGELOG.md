@@ -7,7 +7,7 @@
     to update the actual links at the bottom of the file.
 -->
 
-### Unreleased
+### Version 1.9
 
 * Make configuration import atomic ([PR #37])
   * If the import fails, the existing configuration remains unchanged now.

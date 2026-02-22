@@ -11,6 +11,7 @@
 
 * Make configuration import atomic ([PR #37])
   * If the import fails, the existing configuration remains unchanged now.
+* Add support for interval-based time schedule ([Issue #14], [Issue #36], [PR #38])
 
 ### Version 1.8
 
@@ -74,6 +75,7 @@
 [Issue #14]: https://github.com/chenxiaolong/BasicSync/issues/14
 [Issue #26]: https://github.com/chenxiaolong/BasicSync/issues/26
 [Issue #29]: https://github.com/chenxiaolong/BasicSync/issues/29
+[Issue #36]: https://github.com/chenxiaolong/BasicSync/issues/36
 [PR #2]: https://github.com/chenxiaolong/BasicSync/pull/2
 [PR #3]: https://github.com/chenxiaolong/BasicSync/pull/3
 [PR #4]: https://github.com/chenxiaolong/BasicSync/pull/4
@@ -101,3 +103,4 @@
 [PR #33]: https://github.com/chenxiaolong/BasicSync/pull/33
 [PR #34]: https://github.com/chenxiaolong/BasicSync/pull/34
 [PR #37]: https://github.com/chenxiaolong/BasicSync/pull/37
+[PR #38]: https://github.com/chenxiaolong/BasicSync/pull/38

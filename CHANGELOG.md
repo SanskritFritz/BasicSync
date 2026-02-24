@@ -7,6 +7,11 @@
     to update the actual links at the bottom of the file.
 -->
 
+### Unreleased
+
+* Add Romanian translations ([PR #41])
+* Add French translations ([PR #42])
+
 ### Version 1.10
 
 * Add option to respect Android's auto-sync data setting ([Issue #39], [PR #40])
@@ -111,3 +116,5 @@
 [PR #37]: https://github.com/chenxiaolong/BasicSync/pull/37
 [PR #38]: https://github.com/chenxiaolong/BasicSync/pull/38
 [PR #40]: https://github.com/chenxiaolong/BasicSync/pull/40
+[PR #41]: https://github.com/chenxiaolong/BasicSync/pull/41
+[PR #42]: https://github.com/chenxiaolong/BasicSync/pull/42

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Andrew Gunnerson
+ * SPDX-FileCopyrightText: 2025-2026 Andrew Gunnerson
  * SPDX-License-Identifier: GPL-3.0-only
  */
 
@@ -206,8 +206,8 @@ class WebUiActivity : AppCompatActivity() {
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.CREATED) {
-                viewModel.runState.collect {
-                    if (it != null && !it.webUiAvailable) {
+                viewModel.serviceState.collect {
+                    if (it?.runState?.webUiAvailable == false) {
                         finish()
                     }
                 }

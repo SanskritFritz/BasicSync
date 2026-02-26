@@ -27,6 +27,8 @@ import android.os.SystemClock
 import android.util.Log
 import com.chiller3.basicsync.Permissions
 import com.chiller3.basicsync.Preferences
+import com.chiller3.basicsync.R
+import java.util.EnumSet
 import kotlin.math.max
 import kotlin.math.roundToInt
 
@@ -41,6 +43,36 @@ data class ProxyInfo(
     val proxy: String,
     val noProxy: String,
 )
+
+enum class BlockedReason {
+    MANUAL,
+    DISCONNECTED,
+    METERED_NETWORK,
+    BAD_NETWORK_TYPE,
+    BAD_WIFI_SSID,
+    ON_BATTERY,
+    LOW_BATTERY,
+    BATTERY_SAVER,
+    AUTO_SYNC_DATA,
+    TIME_SCHEDULE;
+
+    fun toString(context: Context): String {
+        val stringId = when (this) {
+            MANUAL -> R.string.blocked_reason_manual
+            DISCONNECTED -> R.string.blocked_reason_disconnected
+            METERED_NETWORK -> R.string.blocked_reason_metered_network
+            BAD_NETWORK_TYPE -> R.string.blocked_reason_bad_network_type
+            BAD_WIFI_SSID -> R.string.blocked_reason_bad_wifi_ssid
+            ON_BATTERY -> R.string.blocked_reason_on_battery
+            LOW_BATTERY -> R.string.blocked_reason_low_battery
+            BATTERY_SAVER -> R.string.blocked_reason_battery_saver
+            AUTO_SYNC_DATA -> R.string.blocked_reason_auto_sync_data
+            TIME_SCHEDULE -> R.string.blocked_reason_time_schedule
+        }
+
+        return context.getString(stringId)
+    }
+}
 
 data class DeviceState(
     val isNetworkConnected: Boolean = false,
@@ -85,33 +117,35 @@ data class DeviceState(
             allowed == ssid?.let(::normalizeSsid)
     }
 
-    fun canRun(prefs: Preferences): Boolean {
+    fun blockedReasons(prefs: Preferences): EnumSet<BlockedReason> {
+        val reasons = EnumSet.noneOf(BlockedReason::class.java)
+
         if (!isNetworkConnected) {
             Log.d(TAG, "Blocked due to lack of network connectivity")
-            return false
-        }
+            reasons.add(BlockedReason.DISCONNECTED)
+        } else {
+            if (prefs.requireUnmeteredNetwork && !isNetworkUnmetered) {
+                Log.d(TAG, "Blocked due to unmetered network requirement")
+                reasons.add(BlockedReason.METERED_NETWORK)
+            }
 
-        if (prefs.requireUnmeteredNetwork && !isNetworkUnmetered) {
-            Log.d(TAG, "Blocked due to unmetered network requirement")
-            return false
-        }
+            val networkAllowed = when (networkType) {
+                NetworkType.WIFI -> prefs.networkAllowWifi
+                NetworkType.CELLULAR -> prefs.networkAllowCellular
+                NetworkType.ETHERNET -> prefs.networkAllowEthernet
+                NetworkType.OTHER -> prefs.networkAllowOther
+            }
+            if (!networkAllowed) {
+                Log.d(TAG, "Blocked due to disallowed network interface type: $networkType")
+                reasons.add(BlockedReason.BAD_NETWORK_TYPE)
+            }
 
-        val networkAllowed = when (networkType) {
-            NetworkType.WIFI -> prefs.networkAllowWifi
-            NetworkType.CELLULAR -> prefs.networkAllowCellular
-            NetworkType.ETHERNET -> prefs.networkAllowEthernet
-            NetworkType.OTHER -> prefs.networkAllowOther
-        }
-        if (!networkAllowed) {
-            Log.d(TAG, "Blocked due to disallowed network interface type: $networkType")
-            return false
-        }
-
-        val allowedWifiNetworks = prefs.allowedWifiNetworks
-        if (networkType == NetworkType.WIFI && allowedWifiNetworks.isNotEmpty()
-                && allowedWifiNetworks.none { ssidMatches(it, wifiSsid) }) {
-            Log.d(TAG, "Blocked due to disallowed network: ssid=$wifiSsid")
-            return false
+            val allowedWifiNetworks = prefs.allowedWifiNetworks
+            if (networkType == NetworkType.WIFI && allowedWifiNetworks.isNotEmpty()
+                    && allowedWifiNetworks.none { ssidMatches(it, wifiSsid) }) {
+                Log.d(TAG, "Blocked due to disallowed network: ssid=$wifiSsid")
+                reasons.add(BlockedReason.BAD_WIFI_SSID)
+            }
         }
 
         if (!isPluggedIn) {
@@ -120,30 +154,35 @@ data class DeviceState(
 
             if (!runOnBattery) {
                 Log.d(TAG, "Blocked due to battery power source")
-                return false
+                reasons.add(BlockedReason.ON_BATTERY)
             } else if (batteryLevel < minBatteryLevel) {
                 Log.d(TAG, "Blocked due to low battery level: $batteryLevel < $minBatteryLevel")
-                return false
+                reasons.add(BlockedReason.LOW_BATTERY)
             }
         }
 
         if (prefs.respectBatterySaver && isBatterySaver) {
             Log.d(TAG, "Blocked due to battery saver mode")
-            return false
+            reasons.add(BlockedReason.BATTERY_SAVER)
         }
 
         if (prefs.respectAutoSyncData && !isAutoSyncData) {
             Log.d(TAG, "Blocked due to auto-sync data status")
-            return false
+            reasons.add(BlockedReason.AUTO_SYNC_DATA)
         }
 
         if (!isInTimeWindow) {
             Log.d(TAG, "Blocked due to execution time window")
-            return false
+            reasons.add(BlockedReason.TIME_SCHEDULE)
         }
 
-        Log.d(TAG, "Permitted to run")
-        return true
+        if (reasons.isEmpty()) {
+            Log.d(TAG, "Permitted to run")
+        } else {
+            Log.d(TAG, "Blocked reasons: $reasons")
+        }
+
+        return reasons
     }
 }
 

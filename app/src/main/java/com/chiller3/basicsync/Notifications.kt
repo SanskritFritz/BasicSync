@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Andrew Gunnerson
+ * SPDX-FileCopyrightText: 2022-2026 Andrew Gunnerson
  * SPDX-License-Identifier: GPL-3.0-only
  */
 
@@ -62,7 +62,8 @@ class Notifications(private val context: Context) {
     }
 
     fun createPersistentNotification(state: SyncthingService.ServiceState): Notification {
-        val titleResId = when (state.runState) {
+        val runState = state.runState
+        val titleResId = when (runState) {
             SyncthingService.RunState.RUNNING -> R.string.notification_persistent_running_title
             SyncthingService.RunState.NOT_RUNNING -> R.string.notification_persistent_not_running_title
             SyncthingService.RunState.PAUSED -> R.string.notification_persistent_paused_title
@@ -78,6 +79,18 @@ class Notifications(private val context: Context) {
             setSmallIcon(R.drawable.ic_notifications)
             setOngoing(true)
             setOnlyAlertOnce(true)
+
+            if (runState.showBlockedReasons) {
+                setContentText(buildString {
+                    for ((i, reason) in state.blockedReasons.withIndex()) {
+                        if (i > 0) {
+                            append('\n')
+                        }
+                        append(reason.toString(context))
+                    }
+                })
+                style = Notification.BigTextStyle()
+            }
 
             for (action in state.actions) {
                 val actionTextResId = when (action) {

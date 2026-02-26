@@ -201,32 +201,45 @@ class SettingsFragment : PreferenceBaseFragment(), FragmentResultListener,
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.CREATED) {
-                viewModel.runState.collect {
-                    prefOpenWebUi.isEnabled = it != null && it.webUiAvailable
+                viewModel.serviceState.collect { state ->
+                    val runState = state?.runState
 
-                    serviceAvailable = it != null
+                    prefOpenWebUi.isEnabled = runState != null && runState.webUiAvailable
+
+                    serviceAvailable = runState != null
                     refreshImportExport()
 
-                    prefServiceStatus.isChecked = it == SyncthingService.RunState.RUNNING
-                            || it == SyncthingService.RunState.STARTING
-                    prefServiceStatus.summary = when (it) {
-                        SyncthingService.RunState.RUNNING ->
-                            getString(R.string.notification_persistent_running_title)
-                        SyncthingService.RunState.NOT_RUNNING ->
-                            getString(R.string.notification_persistent_not_running_title)
-                        SyncthingService.RunState.PAUSED ->
-                            getString(R.string.notification_persistent_paused_title)
-                        SyncthingService.RunState.STARTING ->
-                            getString(R.string.notification_persistent_starting_title)
-                        SyncthingService.RunState.STOPPING ->
-                            getString(R.string.notification_persistent_stopping_title)
-                        SyncthingService.RunState.PAUSING ->
-                            getString(R.string.notification_persistent_pausing_title)
-                        SyncthingService.RunState.IMPORTING ->
-                            getString(R.string.notification_persistent_importing_title)
-                        SyncthingService.RunState.EXPORTING ->
-                            getString(R.string.notification_persistent_exporting_title)
-                        null -> null
+                    prefServiceStatus.isChecked = runState == SyncthingService.RunState.RUNNING
+                            || runState == SyncthingService.RunState.STARTING
+                    prefServiceStatus.summary = runState?.let {
+                        buildString {
+                            val statusText = when (runState) {
+                                SyncthingService.RunState.RUNNING ->
+                                    getString(R.string.notification_persistent_running_title)
+                                SyncthingService.RunState.NOT_RUNNING ->
+                                    getString(R.string.notification_persistent_not_running_title)
+                                SyncthingService.RunState.PAUSED ->
+                                    getString(R.string.notification_persistent_paused_title)
+                                SyncthingService.RunState.STARTING ->
+                                    getString(R.string.notification_persistent_starting_title)
+                                SyncthingService.RunState.STOPPING ->
+                                    getString(R.string.notification_persistent_stopping_title)
+                                SyncthingService.RunState.PAUSING ->
+                                    getString(R.string.notification_persistent_pausing_title)
+                                SyncthingService.RunState.IMPORTING ->
+                                    getString(R.string.notification_persistent_importing_title)
+                                SyncthingService.RunState.EXPORTING ->
+                                    getString(R.string.notification_persistent_exporting_title)
+                            }
+                            append(statusText)
+
+                            if (runState.showBlockedReasons) {
+                                for (reason in state.blockedReasons) {
+                                    append('\n')
+                                    append(reason.toString(context))
+                                }
+                            }
+                        }
                     }
                 }
             }

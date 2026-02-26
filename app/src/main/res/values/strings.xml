@@ -122,6 +122,18 @@
     <string name="notification_action_start">Start</string>
     <string name="notification_action_stop">Stop</string>
 
+    <!-- Paused/stopped reason -->
+    <string name="blocked_reason_manual">• Manually stopped</string>
+    <string name="blocked_reason_disconnected">• Not connected to network</string>
+    <string name="blocked_reason_metered_network">• Connected to metered network</string>
+    <string name="blocked_reason_bad_network_type">• Network type not allowed</string>
+    <string name="blocked_reason_bad_wifi_ssid">• Connected to blocked Wi-Fi network</string>
+    <string name="blocked_reason_on_battery">• Running on battery power</string>
+    <string name="blocked_reason_low_battery">• Battery level is low</string>
+    <string name="blocked_reason_battery_saver">• Battery saver mode is on</string>
+    <string name="blocked_reason_auto_sync_data">• Auto-sync data is off</string>
+    <string name="blocked_reason_time_schedule">• Outside of time schedule</string>
+
     <!-- Durations -->
     <plurals name="duration_seconds">
         <item quantity="one">%d second</item>

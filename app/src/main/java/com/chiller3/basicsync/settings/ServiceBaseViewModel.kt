@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Andrew Gunnerson
+ * SPDX-FileCopyrightText: 2025-2026 Andrew Gunnerson
  * SPDX-License-Identifier: GPL-3.0-only
  */
 
@@ -20,8 +20,8 @@ abstract class ServiceBaseViewModel(application: Application) : AndroidViewModel
     ServiceConnection, SyncthingService.ServiceListener {
     protected var binder: SyncthingService.ServiceBinder? = null
 
-    private val _runState = MutableStateFlow<SyncthingService.RunState?>(null)
-    val runState = _runState.asStateFlow()
+    private val _serviceState = MutableStateFlow<SyncthingService.ServiceState?>(null)
+    val serviceState = _serviceState.asStateFlow()
 
     private val _guiInfo = MutableStateFlow<SyncthingService.GuiInfo?>(null)
     val guiInfo = _guiInfo.asStateFlow()
@@ -59,10 +59,10 @@ abstract class ServiceBaseViewModel(application: Application) : AndroidViewModel
     }
 
     override fun onRunStateChanged(
-        state: SyncthingService.RunState,
+        state: SyncthingService.ServiceState,
         guiInfo: SyncthingService.GuiInfo?,
     ) {
-        _runState.update { state }
+        _serviceState.update { state }
         _guiInfo.update { guiInfo }
     }
 

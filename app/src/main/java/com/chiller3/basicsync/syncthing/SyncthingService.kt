@@ -26,6 +26,7 @@ import com.chiller3.basicsync.binding.stbridge.SyncthingApp
 import com.chiller3.basicsync.binding.stbridge.SyncthingStartupConfig
 import com.chiller3.basicsync.binding.stbridge.SyncthingStatusReceiver
 import java.io.IOException
+import java.util.EnumSet
 
 class SyncthingService : Service(), SyncthingStatusReceiver, DeviceStateListener,
     SharedPreferences.OnSharedPreferenceChangeListener {
@@ -64,18 +65,24 @@ class SyncthingService : Service(), SyncthingStatusReceiver, DeviceStateListener
         IMPORTING,
         EXPORTING;
 
+        val showBlockedReasons: Boolean
+            get() = this == NOT_RUNNING || this == PAUSED
+
         val webUiAvailable: Boolean
             get() = this == RUNNING || this == PAUSED || this == PAUSING
     }
 
     data class ServiceState(
-        val keepAlive: Boolean,
-        val shouldRun: Boolean,
-        val isStarted: Boolean,
-        val isActive: Boolean,
-        val manualMode: Boolean,
-        val preRunAction: PreRunAction?,
+        private val keepAlive: Boolean,
+        val blockedReasons: EnumSet<BlockedReason>,
+        private val isStarted: Boolean,
+        private val isActive: Boolean,
+        private val manualMode: Boolean,
+        private val preRunAction: PreRunAction?,
     ) {
+        private val shouldRun: Boolean
+            get() = blockedReasons.isEmpty()
+
         val runState: RunState
             get() = if (preRunAction != null) {
                 when (preRunAction) {
@@ -144,11 +151,7 @@ class SyncthingService : Service(), SyncthingStatusReceiver, DeviceStateListener
                     ?: throw IOException("Failed to open for reading: $uri")
 
                 // stbridge will own the fd.
-                Stbridge.importConfiguration(
-                    fd.detachFd().toLong(),
-                    uri.toString(),
-                    password?.value ?: "",
-                )
+                Stbridge.importConfiguration(fd.detachFd().toLong(), uri.toString(), password.value)
             }
         }
 
@@ -159,11 +162,7 @@ class SyncthingService : Service(), SyncthingStatusReceiver, DeviceStateListener
                     ?: throw IOException("Failed to open for writing: $uri")
 
                 // stbridge will own the fd.
-                Stbridge.exportConfiguration(
-                    fd.detachFd().toLong(),
-                    uri.toString(),
-                    password?.value ?: "",
-                )
+                Stbridge.exportConfiguration(fd.detachFd().toLong(), uri.toString(), password.value)
             }
         }
     }
@@ -188,17 +187,21 @@ class SyncthingService : Service(), SyncthingStatusReceiver, DeviceStateListener
     @GuardedBy("stateLock")
     private var runningProxyInfo: ProxyInfo? = null
 
-    private val autoShouldRun: Boolean
+    private val blockedReasons: EnumSet<BlockedReason>
         @GuardedBy("stateLock")
-        get() = deviceState.canRun(prefs)
+        get() = if (prefs.isManualMode) {
+            if (prefs.manualShouldRun) {
+                EnumSet.noneOf(BlockedReason::class.java)
+            } else {
+                EnumSet.of(BlockedReason.MANUAL)
+            }
+        } else {
+            deviceState.blockedReasons(prefs)
+        }
 
     private val shouldRun: Boolean
         @GuardedBy("stateLock")
-        get() = if (prefs.isManualMode) {
-            prefs.manualShouldRun
-        } else {
-            autoShouldRun
-        }
+        get() = blockedReasons.isEmpty()
 
     private val shouldStart: Boolean
         @GuardedBy("stateLock")
@@ -275,7 +278,7 @@ class SyncthingService : Service(), SyncthingStatusReceiver, DeviceStateListener
             ACTION_MANUAL_MODE -> {
                 // Keep the current state since the user has no way to know what the previously
                 // saved state is anyway.
-                prefs.manualShouldRun = autoShouldRun
+                prefs.manualShouldRun = shouldRun
                 prefs.isManualMode = true
             }
             ACTION_START -> prefs.manualShouldRun = true
@@ -329,7 +332,7 @@ class SyncthingService : Service(), SyncthingStatusReceiver, DeviceStateListener
 
             val notificationState = ServiceState(
                 keepAlive = prefs.keepAlive,
-                shouldRun = shouldRun,
+                blockedReasons = blockedReasons,
                 isStarted = isStarted,
                 isActive = isActive,
                 manualMode = prefs.isManualMode,
@@ -342,11 +345,10 @@ class SyncthingService : Service(), SyncthingStatusReceiver, DeviceStateListener
                 forceShowNotification = false
 
                 if (wasChanged) {
-                    val runState = notificationState.runState
                     val guiInfo = guiInfo
 
                     for (listener in listeners) {
-                        listener.onRunStateChanged(runState, guiInfo)
+                        listener.onRunStateChanged(notificationState, guiInfo)
                     }
                 }
 
@@ -519,7 +521,7 @@ class SyncthingService : Service(), SyncthingStatusReceiver, DeviceStateListener
     }
 
     interface ServiceListener {
-        fun onRunStateChanged(state: RunState, guiInfo: GuiInfo?)
+        fun onRunStateChanged(state: ServiceState, guiInfo: GuiInfo?)
 
         fun onPreRunActionResult(preRunAction: PreRunAction, exception: Exception?)
     }
@@ -533,7 +535,7 @@ class SyncthingService : Service(), SyncthingStatusReceiver, DeviceStateListener
                     Log.w(TAG, "Listener was already registered: $listener")
                 }
 
-                listener.onRunStateChanged(lastServiceState!!.runState, guiInfo)
+                listener.onRunStateChanged(lastServiceState!!, guiInfo)
             }
         }
 

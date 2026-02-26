@@ -122,6 +122,18 @@
     <string name="notification_action_start">Pornește</string>
     <string name="notification_action_stop">Oprește</string>
 
+    <!-- Paused/stopped reason -->
+    <string name="blocked_reason_manual">• Oprit manual</string>
+    <string name="blocked_reason_disconnected">• Nu este conectat la rețea</string>
+    <string name="blocked_reason_metered_network">• Conectat la rețea contorizată</string>
+    <string name="blocked_reason_bad_network_type">• Tipul rețelei nu este permis</string>
+    <string name="blocked_reason_bad_wifi_ssid">• Conectat la o rețea Wi-Fi blocată</string>
+    <string name="blocked_reason_on_battery">• Funcționează pe baterie</string>
+    <string name="blocked_reason_low_battery">• Nivelul bateriei este scăzut</string>
+    <string name="blocked_reason_battery_saver">• Modul de economisire a bateriei este activat</string>
+    <string name="blocked_reason_auto_sync_data">• Sincronizarea automată a datelor este dezactivată</string>
+    <string name="blocked_reason_time_schedule">• În afara programului</string>
+
     <!-- Durations -->
     <plurals name="duration_seconds">
         <item quantity="one">%d secundă</item>

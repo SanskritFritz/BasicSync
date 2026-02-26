@@ -12,6 +12,7 @@
 * Add Romanian translations ([PR #41])
 * Add French translations ([PR #42])
 * Add Hungarian translations ([PR #43])
+* Display the reason syncthing is paused/stopped ([PR #44])
 
 ### Version 1.10
 
@@ -120,3 +121,4 @@
 [PR #41]: https://github.com/chenxiaolong/BasicSync/pull/41
 [PR #42]: https://github.com/chenxiaolong/BasicSync/pull/42
 [PR #43]: https://github.com/chenxiaolong/BasicSync/pull/43
+[PR #44]: https://github.com/chenxiaolong/BasicSync/pull/44
